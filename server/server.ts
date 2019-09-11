@@ -11,4 +11,10 @@ populateEventsCron.start();
 
 app.use("/", events);
 
+app.get("/", (req, res) => {
+  res
+    .status(200)
+    .send("Velkommen til medcal. Vi er klar til at modtage queries.");
+});
+
 app.listen(port, () => console.log(`Listening on port ${port}`));
