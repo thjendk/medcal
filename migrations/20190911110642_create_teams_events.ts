@@ -7,6 +7,7 @@ export async function up(knex: Knex): Promise<any> {
     t.string("lecture_id");
     t.string("season");
     t.integer("year");
+    t.integer("semester");
     t.timestamps(true, true);
   });
 }

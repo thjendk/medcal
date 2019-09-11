@@ -5,6 +5,7 @@ interface TeamsEvents {
   team: number;
   season: string;
   year: string;
+  semester: number;
 }
 
 class TeamsEvents extends Model {
