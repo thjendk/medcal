@@ -1,0 +1,41 @@
+{
+  "name": "medcal",
+  "version": "1.0.0",
+  "description": "Calendar parser for AU medicine",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node build/server/server.js",
+    "dev": "nodemon"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thomasjensen1194/medcal.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thomasjensen1194/medcal/issues"
+  },
+  "homepage": "https://github.com/thomasjensen1194/medcal#readme",
+  "dependencies": {
+    "cron": "^1.7.2",
+    "dotenv-flow": "^3.1.0",
+    "express": "^4.17.1",
+    "ical": "^0.6.0",
+    "knex": "^0.19.4",
+    "lodash": "^4.17.15",
+    "mysql": "^2.17.1",
+    "objection": "^1.6.9",
+    "ts-node": "^8.3.0",
+    "tsconfig-paths": "^3.8.0",
+    "typescript": "^3.6.3"
+  },
+  "devDependencies": {
+    "@types/cron": "^1.7.1",
+    "@types/dotenv-flow": "^3.0.0",
+    "@types/express": "^4.17.1",
+    "@types/lodash": "^4.14.138"
+  }
+}
