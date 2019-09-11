@@ -3,6 +3,8 @@ import ical from "ical";
 import Event from "../models/eventsModel";
 import _ from "lodash";
 import TeamsEvents from "models/teamsEvents";
+import Teacher from "models/teacherModel";
+import EventsTeachers from "models/eventsTeachers";
 
 const semesters = {
   // 1: 9, // { Key: Semester, value: number of teams }
@@ -37,6 +39,7 @@ const getTypeFromEvent = (event: any) => {
 
 const parseEvents = async (semester: number, team: number) => {
   console.log(`Inserting semester ${semester} and team ${team}`);
+  const teachers = await Teacher.query();
   let events: Partial<Event>[] = [];
   const year = new Date()
     .getFullYear()
@@ -111,10 +114,11 @@ const parseEvents = async (semester: number, team: number) => {
 
     const exists = await existsQuery.andWhere({ semester }).first();
 
+    let result: Event;
     if (exists) {
-      await Event.query().updateAndFetchById(exists.id, event);
+      result = await Event.query().updateAndFetchById(exists.id, event);
     } else {
-      await Event.query().insert(event);
+      result = await Event.query().insert(event);
     }
 
     if (lecture_id) {
@@ -125,6 +129,30 @@ const parseEvents = async (semester: number, team: number) => {
         year,
         semester
       });
+    }
+
+    const eventTeachers: Teacher[] = [];
+    for (let teacher of teachers) {
+      if (
+        event.description &&
+        event.description.toLowerCase().includes(teacher.name.toLowerCase())
+      ) {
+        eventTeachers.push(teacher);
+      }
+    }
+
+    if (eventTeachers.length > 0) {
+      for (let teacher of eventTeachers) {
+        const exists = await EventsTeachers.query()
+          .where({ event_id: result.id, teacher_id: teacher.id })
+          .first();
+        if (exists) continue;
+
+        await EventsTeachers.query().insert({
+          event_id: result.id,
+          teacher_id: teacher.id
+        });
+      }
     }
   }
 };
