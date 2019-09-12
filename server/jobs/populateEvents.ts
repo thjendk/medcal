@@ -142,13 +142,13 @@ const parseEvents = async (semester: number, team: number) => {
       return (
         season +
         year +
+        appendZero(semester.toString()) +
         appendZero(
           event.description
             .trim()
             .split(":")[0]
             .substr(1)
-        ) +
-        appendZero(semester.toString())
+        )
       );
     } else {
       return null;
