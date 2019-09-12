@@ -32,14 +32,10 @@ const calculateSeason = () => {
 };
 
 const getLocationId = (event: Event) => {
-  if (event.location.match(/aud a/i) || event.location.match(/auditorium a/i))
-    return "A";
-  if (event.location.match(/aud b/i) || event.location.match(/auditorium b/i))
-    return "B";
-  if (event.location.match(/aud c/i) || event.location.match(/auditorium c/i))
-    return "C";
-  if (event.location.match(/aud j/i) || event.location.match(/auditorium j/i))
-    return "J";
+  if (event.location.match(/aud a|auditorium a/i)) return "A";
+  if (event.location.match(/aud b|auditorium b/i)) return "B";
+  if (event.location.match(/aud c|auditorium c/i)) return "C";
+  if (event.location.match(/aud j|auditorium j/i)) return "J";
 
   return null;
 };
