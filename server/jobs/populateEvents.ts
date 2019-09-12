@@ -147,7 +147,8 @@ const parseEvents = async (semester: number, team: number) => {
             .trim()
             .split(":")[0]
             .substr(1)
-        )
+        ) +
+        appendZero(semester.toString())
       );
     } else {
       return null;
