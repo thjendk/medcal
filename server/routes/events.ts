@@ -4,12 +4,33 @@ import { populateEvents } from "jobs/populateEvents";
 const Router = express.Router();
 
 Router.get("/events", async (req, res) => {
-  const { y: year, s: season, sem: semester } = req.query;
+  const {
+    y: year,
+    s: season,
+    sem: semester,
+    sortBy,
+    t: type,
+    order
+  } = req.query;
 
-  const result = await Event.query()
+  let resultQuery = Event.query()
     .joinEager("[teams, teachers]")
-    .where({ year, "events.season": season, "events.semester": semester })
+    .where({
+      year,
+      "events.season": season,
+      "events.semester": semester,
+      type: type
+    })
     .skipUndefined();
+
+  if (sortBy === "updated_at")
+    resultQuery = resultQuery.orderBy("updated_at", order || "desc");
+  if (sortBy === "lecture_id")
+    resultQuery = resultQuery
+      .whereNotNull("events.lecture_id")
+      .orderBy("events.lecture_id", order || "asc");
+
+  const result = await resultQuery;
 
   res.status(200).json(result);
 });

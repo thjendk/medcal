@@ -37,18 +37,104 @@ const getTypeFromEvent = (event: any) => {
   return "unknown";
 };
 
+const appendZero = (string: string) => {
+  return string.length === 1 ? `0${string}` : string;
+};
+
+const insertTeachers = async (
+  event: Partial<Event>,
+  teachers: Teacher[],
+  result: Event
+) => {
+  // Insert teachers
+  const eventTeachers: Teacher[] = [];
+  for (let teacher of teachers) {
+    if (
+      event.description &&
+      event.description.toLowerCase().includes(teacher.name.toLowerCase())
+    ) {
+      eventTeachers.push(teacher);
+    }
+  }
+
+  if (eventTeachers.length > 0) {
+    for (let teacher of eventTeachers) {
+      const exists = await EventsTeachers.query()
+        .where({ event_id: result.id, teacher_id: teacher.id })
+        .first();
+      if (exists) continue;
+
+      await EventsTeachers.query().insert({
+        event_id: result.id,
+        teacher_id: teacher.id
+      });
+    }
+  }
+};
+
+const insertEventsAndTeachers = async (events: Partial<Event>[]) => {
+  // Insert events into database
+  let count = 1;
+  for (let event of events) {
+    console.log(`Inserting event ${count} of ${events.length}`);
+    const { lecture_id, title, semester, year, season, team } = event;
+
+    // Indsæt eventet i events, hvis det ikke allerede eksisterer
+    let existsQuery = Event.query();
+    // Sammenlign med forelæsningsID - hvis dette ikke eksiterer så sammenlign Titel, ellers så indsæt
+    if (lecture_id) {
+      existsQuery = existsQuery.where({ lecture_id });
+    } else {
+      existsQuery = existsQuery.where({ title });
+    }
+
+    const exists = await existsQuery.andWhere({ semester }).first();
+
+    if (lecture_id) {
+      await TeamsEvents.query().insert({
+        lecture_id,
+        team,
+        season,
+        year: year,
+        semester
+      });
+    }
+
+    // Team skal kun bruges til jointable'n teamEvents, men ikke til events.
+    delete event.team;
+
+    let result: Event;
+    if (exists && !_.isEqual(event, exists)) {
+      result = await Event.query().updateAndFetchById(exists.id, event);
+      // Fjern alle undervisere, og sæt dem ind igen (under IF statements), hvis eventet har ændret sig
+      await EventsTeachers.query()
+        .where({ event_id: exists.id })
+        .delete();
+    }
+    if (!exists) {
+      result = await Event.query().insert(event);
+    } else {
+      count++;
+      continue;
+    }
+
+    // Insert teachers
+    const teachers = await Teacher.query();
+    await insertTeachers(event, teachers, result);
+    count++;
+  }
+  return "Done!";
+};
+
 const parseEvents = async (semester: number, team: number) => {
-  console.log(`Inserting semester ${semester} and team ${team}`);
-  const teachers = await Teacher.query();
-  let events: Partial<Event>[] = [];
+  console.log(`Parsing semester ${semester} and team ${team}`);
   const year = new Date()
     .getFullYear()
     .toString()
     .substr(2);
   const season = calculateSeason();
-  const zeroTeam = team.toString().length === 1 ? `0${team}` : team;
-  let link = "";
-  link = `http://skemahealthau.dk/skema/${season}${year}_0${semester -
+  const zeroTeam = appendZero(team.toString());
+  const link = `http://skemahealthau.dk/skema/${season}${year}_0${semester -
     6}semHold${zeroTeam}.ics`;
 
   const getEventId = (event: any) => {
@@ -56,10 +142,12 @@ const parseEvents = async (semester: number, team: number) => {
       return (
         season +
         year +
-        event.description
-          .trim()
-          .split(":")[0]
-          .substr(1)
+        appendZero(
+          event.description
+            .trim()
+            .split(":")[0]
+            .substr(1)
+        )
       );
     } else {
       return null;
@@ -67,6 +155,7 @@ const parseEvents = async (semester: number, team: number) => {
   };
 
   // Creates the event object from ical
+  let events: Partial<Event>[] = [];
   const getEventsFromIcal = async () =>
     new Promise((resolve, reject) => {
       ical.fromURL(link, {}, (err, data) => {
@@ -85,7 +174,8 @@ const parseEvents = async (semester: number, team: number) => {
                 type: getTypeFromEvent(event),
                 lecture_id: getEventId(event),
                 year: Number(year),
-                season: season
+                season: season,
+                team: team
               });
             }
           }
@@ -96,75 +186,27 @@ const parseEvents = async (semester: number, team: number) => {
 
   await getEventsFromIcal();
 
-  // Fjern duplicates inden de sammenlignes med databasen
-  events = _.uniqBy(events, event => event.lecture_id || event.title);
-
-  // Insert events into database
-  for (let event of events) {
-    const { lecture_id, title, semester } = event;
-
-    // Indsæt eventet i events, hvis det ikke allerede eksisterer
-    let existsQuery = Event.query();
-    // Sammenlign med forelæsningsID - hvis dette ikke eksiterer så sammenlign Titel, ellers så indsæt
-    if (lecture_id) {
-      existsQuery = existsQuery.where({ lecture_id });
-    } else {
-      existsQuery = existsQuery.where({ title });
-    }
-
-    const exists = await existsQuery.andWhere({ semester }).first();
-
-    let result: Event;
-    if (exists) {
-      result = await Event.query().updateAndFetchById(exists.id, event);
-    } else {
-      result = await Event.query().insert(event);
-    }
-
-    if (lecture_id) {
-      await TeamsEvents.query().insert({
-        lecture_id,
-        team,
-        season,
-        year,
-        semester
-      });
-    }
-
-    const eventTeachers: Teacher[] = [];
-    for (let teacher of teachers) {
-      if (
-        event.description &&
-        event.description.toLowerCase().includes(teacher.name.toLowerCase())
-      ) {
-        eventTeachers.push(teacher);
-      }
-    }
-
-    if (eventTeachers.length > 0) {
-      for (let teacher of eventTeachers) {
-        const exists = await EventsTeachers.query()
-          .where({ event_id: result.id, teacher_id: teacher.id })
-          .first();
-        if (exists) continue;
-
-        await EventsTeachers.query().insert({
-          event_id: result.id,
-          teacher_id: teacher.id
-        });
-      }
-    }
-  }
+  return events;
 };
 
 export const populateEvents = async () => {
+  let events: Partial<Event>[] = [];
+
   for (let key in semesters) {
     const teams = [...Array(semesters[key])];
 
     for (let [i, team] of teams.entries()) {
-      await parseEvents(Number(key), i + 1);
+      const fetchedEvents: Partial<Event>[] = await parseEvents(
+        Number(key),
+        i + 1
+      );
+      events.push(...fetchedEvents);
     }
   }
+
+  events = _.uniqBy(events, event => event.lecture_id || event.title);
+
+  await insertEventsAndTeachers(events);
 
   console.log("Finished!");
 };

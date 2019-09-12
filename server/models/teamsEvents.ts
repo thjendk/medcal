@@ -4,7 +4,7 @@ interface TeamsEvents {
   lecture_id: string | null;
   team: number;
   season: string;
-  year: string;
+  year: number;
   semester: number;
 }
 
