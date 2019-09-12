@@ -24,12 +24,15 @@ Router.get("/events", async (req, res) => {
     })
     .skipUndefined();
 
-  if (sortBy === "updated_at" || sortby === "updated_at")
+  if (sortBy === "updated_at" || sortby === "updated_at") {
     resultQuery = resultQuery.orderBy("updated_at", order || "desc");
-  if (sortBy === "lecture_id" || sortby === "lecture_id")
+  } else if (sortBy === "lecture_id" || sortby === "lecture_id") {
     resultQuery = resultQuery
       .whereNotNull("events.lecture_id")
       .orderBy("events.lecture_id", order || "asc");
+  } else {
+    resultQuery = resultQuery.orderBy("start");
+  }
 
   const result = await resultQuery;
 
