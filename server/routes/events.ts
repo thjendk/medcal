@@ -8,6 +8,7 @@ Router.get("/events", async (req, res) => {
     y: year,
     s: season,
     sem: semester,
+    sortby,
     sortBy,
     t: type,
     order
@@ -23,9 +24,9 @@ Router.get("/events", async (req, res) => {
     })
     .skipUndefined();
 
-  if (sortBy === "updated_at")
+  if (sortBy === "updated_at" || sortby === "updated_at")
     resultQuery = resultQuery.orderBy("updated_at", order || "desc");
-  if (sortBy === "lecture_id")
+  if (sortBy === "lecture_id" || sortby === "lecture_id")
     resultQuery = resultQuery
       .whereNotNull("events.lecture_id")
       .orderBy("events.lecture_id", order || "asc");
