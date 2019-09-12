@@ -31,6 +31,19 @@ const calculateSeason = () => {
   }
 };
 
+const getLocationId = (event: Event) => {
+  if (event.location.match(/aud a/i) || event.location.match(/auditorium a/i))
+    return "A";
+  if (event.location.match(/aud b/i) || event.location.match(/auditorium b/i))
+    return "B";
+  if (event.location.match(/aud c/i) || event.location.match(/auditorium c/i))
+    return "C";
+  if (event.location.match(/aud j/i) || event.location.match(/auditorium j/i))
+    return "J";
+
+  return null;
+};
+
 const getTypeFromEvent = (event: any) => {
   if (event.summary.match(/intro/i)) return "intro";
   if (event.description.match(/F\d+:/i)) return "lecture";
@@ -76,7 +89,9 @@ const insertEventsAndTeachers = async (events: Partial<Event>[]) => {
   // Insert events into database
   let count = 1;
   for (let event of events) {
-    console.log(`Inserting event ${count} of ${events.length}`);
+    if (process.env.NODE_ENV === "development") {
+      console.log(`Inserting event ${count} of ${events.length}`);
+    }
     const { lecture_id, title, semester, year, season, team } = event;
 
     // Indsæt eventet i events, hvis det ikke allerede eksisterer
@@ -176,7 +191,8 @@ const parseEvents = async (semester: number, team: number) => {
                 lecture_id: getEventId(event),
                 year: Number(year),
                 season: season,
-                team: team
+                team: team,
+                location_id: getLocationId(event)
               });
             }
           }

@@ -9,6 +9,7 @@ interface Event {
   type: string;
   description: string;
   location: string;
+  location_id: string | null;
   start: string;
   end: string;
   team: number;

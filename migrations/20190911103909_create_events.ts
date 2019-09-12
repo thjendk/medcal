@@ -8,6 +8,7 @@ export async function up(knex: Knex): Promise<any> {
     t.string("type");
     t.text("description");
     t.text("location");
+    t.string("location_id");
     t.dateTime("start");
     t.dateTime("end");
     t.integer("semester");
