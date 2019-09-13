@@ -5,17 +5,23 @@ const Router = express.Router();
 
 Router.get("/events", async (req, res) => {
   const {
-    y: year,
-    s: season,
-    sem: semester,
+    year,
+    season,
+    semester,
     team,
     sortby,
     sortBy,
     type,
     order,
     start,
-    end
+    end,
+    id
   } = req.query;
+
+  if (id) {
+    const result = await Event.query().findById(id);
+    return res.status(200).send(result);
+  }
 
   let resultQuery = Event.query()
     .joinEager("[teams, teachers]")
@@ -34,12 +40,8 @@ Router.get("/events", async (req, res) => {
   if (end) {
     resultQuery = resultQuery.where("end", "<=", end);
   }
-  if (sortBy === "updated_at" || sortby === "updated_at") {
-    resultQuery = resultQuery.orderBy("updated_at", order || "desc");
-  } else if (sortBy === "lecture_id" || sortby === "lecture_id") {
-    resultQuery = resultQuery
-      .whereNotNull("events.lecture_id")
-      .orderBy("events.lecture_id", order || "asc");
+  if (sortBy || sortby) {
+    resultQuery = resultQuery.orderBy(sortBy || sortby, order || "asc");
   } else {
     resultQuery = resultQuery.orderBy("start");
   }

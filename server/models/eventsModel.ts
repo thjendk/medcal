@@ -16,10 +16,16 @@ interface Event {
   semester: number;
   season: string;
   year: number;
+  updated_at: Date;
 }
 
 class Event extends Model {
   static tableName = "events";
+
+  $beforeUpdate() {
+    this.updated_at = new Date();
+  }
+
   static relationMappings = {
     teams: {
       relation: Model.HasManyRelation,
