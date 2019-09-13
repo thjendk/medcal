@@ -8,10 +8,13 @@ Router.get("/events", async (req, res) => {
     y: year,
     s: season,
     sem: semester,
+    team,
     sortby,
     sortBy,
-    t: type,
-    order
+    type,
+    order,
+    start,
+    end
   } = req.query;
 
   let resultQuery = Event.query()
@@ -20,10 +23,17 @@ Router.get("/events", async (req, res) => {
       year,
       "events.season": season,
       "events.semester": semester,
-      type: type
+      type: type,
+      "events.team": team
     })
     .skipUndefined();
 
+  if (start) {
+    resultQuery = resultQuery.where("start", ">=", start);
+  }
+  if (end) {
+    resultQuery = resultQuery.where("end", "<=", end);
+  }
   if (sortBy === "updated_at" || sortby === "updated_at") {
     resultQuery = resultQuery.orderBy("updated_at", order || "desc");
   } else if (sortBy === "lecture_id" || sortby === "lecture_id") {
