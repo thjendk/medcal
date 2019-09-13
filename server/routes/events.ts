@@ -27,7 +27,7 @@ Router.get("/", async (req, res) => {
   let resultQuery = Event.query()
     .joinEager("[teams, teachers]")
     .where({
-      year,
+      "events.year": year,
       "events.season": season,
       "events.semester": semester,
       type: type,
