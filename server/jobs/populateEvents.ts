@@ -226,8 +226,6 @@ export const populateEvents = async () => {
     }
   }
 
-  events = _.uniqBy(events, event => event.lecture_id || event.title);
-
   await insertEventsAndTeachers(events);
 
   console.log("Finished!");
