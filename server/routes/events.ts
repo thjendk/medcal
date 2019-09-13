@@ -18,7 +18,8 @@ Router.get("/", async (req, res) => {
       start,
       end,
       id,
-      whereEndBetween
+      whereEndBetween,
+      nextEvent
     } = req.query;
 
     if (start) start = moment(start).format("YYYY-MM-DD HH:mm:ss");
@@ -26,7 +27,22 @@ Router.get("/", async (req, res) => {
 
     if (id) {
       const result = await Event.query().findById(id);
-      return res.status(200).send(result);
+      return res.status(200).json(result);
+    }
+    if (nextEvent) {
+      if (!start || !end)
+        return res
+          .status(400)
+          .send("You must specify start and end, when getting next event");
+      const result = await Event.query()
+        .where("team", "=", team)
+        .andWhere("semester", "=", semester)
+        .andWhere(function() {
+          this.whereBetween("end", [start, end]).orWhere("end", ">=", start);
+        })
+        .orderBy("start", "asc")
+        .first();
+      return res.status(200).json(result);
     }
 
     let resultQuery = Event.query()
