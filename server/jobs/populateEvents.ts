@@ -99,7 +99,7 @@ const insertEventsAndTeachers = async (events: Partial<Event>[]) => {
   // Insert events into database
   let count = 1;
   for (let event of events) {
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.NODE_ENV !== "production") {
       console.log(`Inserting event ${count} of ${events.length}`);
     }
     const { lecture_id, title, semester, year, season, team } = event;
