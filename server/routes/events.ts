@@ -15,7 +15,8 @@ Router.get("/", async (req, res) => {
     order,
     start,
     end,
-    id
+    id,
+    whereEndBetween
   } = req.query;
 
   if (id) {
@@ -34,12 +35,16 @@ Router.get("/", async (req, res) => {
     })
     .skipUndefined();
 
-  if (start) {
+  if (whereEndBetween && start && end) {
+    resultQuery = resultQuery.whereBetween("end", [start, end]);
+  }
+  if (start && !whereEndBetween) {
     resultQuery = resultQuery.where("start", ">=", start);
   }
-  if (end) {
+  if (end && !whereEndBetween) {
     resultQuery = resultQuery.where("end", "<=", end);
   }
+
   if (sortBy || sortby) {
     resultQuery = resultQuery.orderBy(sortBy || sortby, order || "asc");
   } else {
