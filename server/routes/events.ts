@@ -30,10 +30,12 @@ Router.get("/", async (req, res) => {
       return res.status(200).json(result);
     }
     if (nextEvent) {
-      if (!start || !end)
+      if (!start || !end || !team || !semester)
         return res
           .status(400)
-          .send("You must specify start and end, when getting next event");
+          .send(
+            "You must specify semester, team, start and end, when getting next event"
+          );
       const result = await Event.query()
         .where("team", "=", team)
         .andWhere("semester", "=", semester)
