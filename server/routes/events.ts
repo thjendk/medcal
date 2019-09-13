@@ -1,11 +1,12 @@
 import express from "express";
 import Event from "models/eventsModel";
+import moment from 'moment';
 import { populateEvents } from "jobs/populateEvents";
 const Router = express.Router();
 
 Router.get("/", async (req, res) => {
   try {
-    const {
+    let {
       year,
       season,
       semester,
@@ -19,6 +20,9 @@ Router.get("/", async (req, res) => {
       id,
       whereEndBetween
     } = req.query;
+
+    if (start) start = moment(start).format('YYYY-MM-DD HH:mm:ss');
+    if (end) end = moment(end).format('YYYY-MM-DD HH:mm:ss');
 
     if (id) {
       const result = await Event.query().findById(id);
