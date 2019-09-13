@@ -5,6 +5,7 @@ import _ from "lodash";
 import TeamsEvents from "models/teamsEvents";
 import Teacher from "models/teacherModel";
 import EventsTeachers from "models/eventsTeachers";
+import OtherEventsTeams from "models/otherEventsTeams";
 
 const semesters = {
   // 1: 9, // { Key: Semester, value: number of teams }
@@ -95,14 +96,16 @@ const insertTeachers = async (
   }
 };
 
-const insertEventsAndTeachers = async (events: Partial<Event>[]) => {
+const insertEventsAndTeachers = async (events: any[]) => {
   // Insert events into database
   let count = 1;
   for (let event of events) {
     if (process.env.NODE_ENV !== "production") {
       console.log(`Inserting event ${count} of ${events.length}`);
     }
-    const { lecture_id, title, semester, year, season, team } = event;
+    const { lecture_id, title, semester, year, season } = event;
+    const team = event.team;
+    delete event.team; // Vi fjerner team fra selve event objectet, da dette ikke skal indgå under events i databasen
 
     // Indsæt eventet i events, hvis det ikke allerede eksisterer
     let existsQuery = Event.query();
@@ -115,7 +118,17 @@ const insertEventsAndTeachers = async (events: Partial<Event>[]) => {
 
     const exists = await existsQuery.andWhere({ semester }).first();
 
-    if (lecture_id) {
+    let result: Event;
+    if (exists && !_.isEqual(event, exists)) {
+      result = await Event.query().updateAndFetchById(exists.id, event);
+    }
+    if (!exists) {
+      result = await Event.query().insertAndFetch(event);
+    } else {
+      result = exists;
+    }
+
+    if (lecture_id && !result.lecture_id) {
       await TeamsEvents.query().insert({
         lecture_id,
         team,
@@ -123,19 +136,17 @@ const insertEventsAndTeachers = async (events: Partial<Event>[]) => {
         year: year,
         semester
       });
-    }
-
-    // Team skal kun bruges til jointable'n teamEvents, men ikke til events.
-    delete event.team;
-
-    let result: Event;
-    if (exists && !_.isEqual(event, exists)) {
-      result = await Event.query().updateAndFetchById(exists.id, event);
-    }
-    if (!exists) {
-      result = await Event.query().insert(event);
     } else {
-      result = exists;
+      const joinExists = await OtherEventsTeams.query().findOne({
+        event_id: result.id,
+        team
+      });
+      if (!joinExists) {
+        await OtherEventsTeams.query().insert({
+          event_id: result.id,
+          team
+        });
+      }
     }
 
     // Fjern alle undervisere, og sæt dem ind igen (i tilfælde af at flere undervisere er tilføjet til databasen, eller at nogen har ændret sig)
@@ -176,7 +187,7 @@ const parseEvents = async (semester: number, team: number) => {
   };
 
   // Creates the event object from ical
-  let events: Partial<Event>[] = [];
+  let events: any[] = [];
   const getEventsFromIcal = async () =>
     new Promise((resolve, reject) => {
       ical.fromURL(link, {}, (err, data) => {

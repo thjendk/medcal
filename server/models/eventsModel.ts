@@ -1,6 +1,7 @@
 import { Model } from "objection";
 import TeamsEvents from "models/teamsEvents";
 import Teacher from "models/teacherModel";
+import OtherEventsTeams from "models/otherEventsTeams";
 
 interface Event {
   id: number;
@@ -12,10 +13,11 @@ interface Event {
   location_id: string | null;
   start: string;
   end: string;
-  team: number;
+  teams: any[];
   semester: number;
   season: string;
   year: number;
+  otherTeams: any[];
   updated_at: Date;
 }
 
@@ -33,6 +35,14 @@ class Event extends Model {
       join: {
         from: "events.lecture_id",
         to: "teams_events.lecture_id"
+      }
+    },
+    otherTeams: {
+      relation: Model.HasManyRelation,
+      modelClass: OtherEventsTeams,
+      join: {
+        from: "events.id",
+        to: "other_events_teams.event_id"
       }
     },
     teachers: {
