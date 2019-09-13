@@ -3,7 +3,7 @@ import Event from "models/eventsModel";
 import { populateEvents } from "jobs/populateEvents";
 const Router = express.Router();
 
-Router.get("/events", async (req, res) => {
+Router.get("/", async (req, res) => {
   const {
     year,
     season,
