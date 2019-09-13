@@ -55,7 +55,7 @@ const insertTeachers = async (
   teachers: Teacher[],
   result: Event
 ) => {
-  // Insert teachers
+  // Find undervisere i eventet
   const eventTeachers: Teacher[] = [];
   for (let teacher of teachers) {
     if (
@@ -66,7 +66,21 @@ const insertTeachers = async (
     }
   }
 
-  if (eventTeachers.length > 0) {
+  // Hent de joins der allerede eksisterer for eventet
+  const teacherJoins = await EventsTeachers.query().where({
+    event_id: result.id
+  });
+
+  /* Tjek for om antallet af undervisere har ændret sig siden sidste opdatering.
+  Hvis det har, så slet alle, og sæt dem ind igen. */
+  if (
+    eventTeachers.length > 0 &&
+    teacherJoins.length !== eventTeachers.length
+  ) {
+    await EventsTeachers.query()
+      .where({ event_id: result.id })
+      .delete();
+
     for (let teacher of eventTeachers) {
       const exists = await EventsTeachers.query()
         .where({ event_id: result.id, teacher_id: teacher.id })
@@ -117,19 +131,14 @@ const insertEventsAndTeachers = async (events: Partial<Event>[]) => {
     let result: Event;
     if (exists && !_.isEqual(event, exists)) {
       result = await Event.query().updateAndFetchById(exists.id, event);
-      // Fjern alle undervisere, og sæt dem ind igen (under IF statements), hvis eventet har ændret sig
-      await EventsTeachers.query()
-        .where({ event_id: exists.id })
-        .delete();
     }
     if (!exists) {
       result = await Event.query().insert(event);
     } else {
-      count++;
-      continue;
+      result = exists;
     }
 
-    // Insert teachers
+    // Fjern alle undervisere, og sæt dem ind igen (i tilfælde af at flere undervisere er tilføjet til databasen, eller at nogen har ændret sig)
     const teachers = await Teacher.query();
     await insertTeachers(event, teachers, result);
     count++;
