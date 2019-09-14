@@ -51,7 +51,7 @@ Router.get("/", async (req, res) => {
     // Hent events
     let events: Partial<Event>[] = await resultQuery;
 
-    events = Event.reWriteTeams(events);
+    events = events.map(event => Event.reWriteTeams(event));
 
     res.status(200).json(events);
   } catch (error) {
