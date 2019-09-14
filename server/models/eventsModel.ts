@@ -28,6 +28,8 @@ class Event extends Model {
     this.updated_at = new Date();
   }
 
+  static defaultEager = "[teams, teachers, otherTeams]";
+
   static relationMappings = {
     teams: {
       relation: Model.HasManyRelation,
@@ -56,6 +58,21 @@ class Event extends Model {
         },
         to: "teachers.id"
       }
+    }
+  };
+
+  /**
+   * Hvis der ikke er nogen teams i eventet, så replace med otherTeams (og derefter fjern otherTeams). Ellers fjernes bare otherTeams.
+   */
+  static reWriteTeams: any = (object: Event) => {
+    if (!object.teams || object.teams.length < 1) {
+      return {
+        ...object,
+        teams: object.otherTeams,
+        otherTeams: undefined
+      };
+    } else {
+      return { ...object, otherTeams: undefined };
     }
   };
 }
