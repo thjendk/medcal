@@ -38,10 +38,10 @@ Router.get("/", async (req, res) => {
         "events.season": season,
         "events.semester": semester,
         type: type
-      }).where(function () {
-this.where({"teams.team": team})
-.orWhere({“otherTeams.team”: team})
-})
+      })
+      .where(function() {
+        this.where({ "teams.team": team }).orWhere({ "otherTeams.team": team });
+      })
       .skipUndefined();
 
     if (sortBy || sortby) {
@@ -53,7 +53,7 @@ this.where({"teams.team": team})
     // Hent events
     let events: Partial<Event>[] = await resultQuery;
 
-    events = events.map(event => Event.reWriteTeams(event));
+    events = events.map((event) => Event.reWriteTeams(event));
 
     res.status(200).json(events);
   } catch (error) {
