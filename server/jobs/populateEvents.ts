@@ -128,7 +128,7 @@ const insertEventsAndTeachers = async (events: any[]) => {
       result = exists;
     }
 
-    if (lecture_id && !result.lecture_id) {
+    if (lecture_id && !result.lecture_id || lecture_id !== result.lecture_id) {
       await TeamsEvents.query().insert({
         lecture_id,
         team,
