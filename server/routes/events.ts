@@ -37,9 +37,11 @@ Router.get("/", async (req, res) => {
         "events.year": year,
         "events.season": season,
         "events.semester": semester,
-        type: type,
-        "teams.team": team
-      })
+        type: type
+      }).where(function () {
+this.where({"teams.team": team})
+.orWhere({“otherTeams.team”: team})
+})
       .skipUndefined();
 
     if (sortBy || sortby) {
