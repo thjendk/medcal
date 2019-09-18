@@ -6,6 +6,7 @@ import TeamsEvents from "models/teamsEvents";
 import Teacher from "models/teacherModel";
 import EventsTeachers from "models/eventsTeachers";
 import OtherEventsTeams from "models/otherEventsTeams";
+import EventChanges from "models/eventChangesModel";
 
 const semesters = {
   // 1: 9, // { Key: Semester, value: number of teams }
@@ -116,14 +117,49 @@ const insertEventsAndTeachers = async (events: any[]) => {
       existsQuery = existsQuery.where({ title });
     }
 
-    const exists = await existsQuery.andWhere({ semester }).first();
+    let exists = await existsQuery.andWhere({ semester }).first();
 
     let result: Event;
-    if (exists && !_.isEqual(event, exists)) {
+    if (
+      exists &&
+      !_.isEqualWith(
+        event,
+        exists,
+        event =>
+          !!{
+            title: event.title,
+            description: event.description,
+            location: event.location
+          }
+      )
+    ) {
+      const picks = ["title", "description", "start", "end", "location"];
+      const compareEvent = _.pick(event, picks);
+      const compareExists = _.pick(exists, picks);
+      const changedValues = _.omitBy(
+        compareEvent,
+        (event, index) => compareExists[index] === event
+      );
+      if (!_.isEmpty(changedValues)) {
+        for (const change in changedValues) {
+          await EventChanges.query().insert({
+            param: change,
+            lecture_id: exists.lecture_id,
+            event_id: exists.id,
+            old: exists[change],
+            new: changedValues[change]
+          });
+        }
+      }
       result = await Event.query().updateAndFetchById(exists.id, event);
     }
     if (!exists) {
       result = await Event.query().insertAndFetch(event);
+      await EventChanges.query().insert({
+        param: "created",
+        lecture_id: result.lecture_id,
+        event_id: result.id
+      });
     } else {
       result = exists;
     }
@@ -228,13 +264,35 @@ const parseEvents = async (semester: number, team: number) => {
   return events;
 };
 
+const deleteRemovedEvents = async (events: Partial<Event>[]) => {
+  console.log("Removing leftover events...");
+  const eventTitles = events.map(event => event.title || "");
+  const eventDescriptions = events.map(event => event.description || "");
+
+  const deleted = await Event.query()
+    .whereNotIn("title", eventTitles)
+    .orWhereNotIn("description", eventDescriptions);
+
+  await EventChanges.query().insertGraph(
+    deleted.map(deletion => ({
+      event_id: deletion.id,
+      lecture_id: deletion.lecture_id,
+      param: "deleted"
+    }))
+  );
+
+  await Event.query()
+    .findByIds(deleted.map(deletion => deletion.id))
+    .delete();
+};
+
 export const populateEvents = async () => {
   let events: Partial<Event>[] = [];
 
   for (let key in semesters) {
     const teams = [...Array(semesters[key])];
 
-    for (let [i, team] of teams.entries()) {
+    for (let [i] of teams.entries()) {
       const fetchedEvents: Partial<Event>[] = await parseEvents(
         Number(key),
         i + 1
@@ -244,6 +302,7 @@ export const populateEvents = async () => {
   }
 
   await insertEventsAndTeachers(events);
+  await deleteRemovedEvents(events);
 
   console.log("Finished!");
 };
