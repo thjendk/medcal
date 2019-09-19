@@ -5,7 +5,9 @@ export async function up(knex: Knex): Promise<any> {
     t.integer("event_id")
       .unsigned()
       .notNullable()
-      .references("events.id");
+      .references("events.id")
+      .onDelete("CASCADE")
+      .onUpdate("CASCADE");
     t.integer("team").notNullable();
     t.primary(["event_id", "team"]);
     t.timestamps(true, true);

@@ -101,9 +101,6 @@ const insertEventsAndTeachers = async (events: any[]) => {
   // Insert events into database
   let count = 1;
   for (let event of events) {
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`Inserting event ${count} of ${events.length}`);
-    }
     const { lecture_id, title, semester, year, season } = event;
     const team = event.team;
     delete event.team; // Vi fjerner team fra selve event objectet, da dette ikke skal indgå under events i databasen
@@ -133,6 +130,9 @@ const insertEventsAndTeachers = async (events: any[]) => {
           }
       )
     ) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`Updating event ${count} of ${events.length}`);
+      }
       const picks = ["title", "description", "start", "end", "location"];
       const compareEvent = _.pick(event, picks);
       const compareExists = _.pick(exists, picks);
@@ -154,6 +154,9 @@ const insertEventsAndTeachers = async (events: any[]) => {
       result = await Event.query().updateAndFetchById(exists.id, event);
     }
     if (!exists) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`Inserting event ${count} of ${events.length}`);
+      }
       result = await Event.query().insertAndFetch(event);
       await EventChanges.query().insert({
         param: "created",
@@ -161,6 +164,11 @@ const insertEventsAndTeachers = async (events: any[]) => {
         event_id: result.id
       });
     } else {
+      if (process.env.NODE_ENV !== "production") {
+        console.log(
+          `Ignoring event ${count} of ${events.length}. Already exists.`
+        );
+      }
       result = exists;
     }
 
@@ -200,7 +208,9 @@ const insertEventsAndTeachers = async (events: any[]) => {
 };
 
 const parseEvents = async (semester: number, team: number) => {
-  console.log(`Parsing semester ${semester} and team ${team}`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`Parsing semester ${semester} and team ${team}`);
+  }
   const year = new Date()
     .getFullYear()
     .toString()
@@ -277,7 +287,8 @@ const deleteRemovedEvents = async (events: Partial<Event>[]) => {
     deleted.map(deletion => ({
       event_id: deletion.id,
       lecture_id: deletion.lecture_id,
-      param: "deleted"
+      param: "deleted",
+      old: deletion.title
     }))
   );
 
@@ -287,6 +298,7 @@ const deleteRemovedEvents = async (events: Partial<Event>[]) => {
 };
 
 export const populateEvents = async () => {
+  console.log("Running population...");
   let events: Partial<Event>[] = [];
 
   for (let key in semesters) {
