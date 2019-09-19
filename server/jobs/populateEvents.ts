@@ -174,7 +174,7 @@ const insertEventsAndTeachers = async (events: any[]) => {
 
     if (lecture_id) {
       await TeamsEvents.query()
-        .where({ lecture_id: result.lecture_id })
+        .where({ lecture_id: result.lecture_id, team })
         .delete();
       await TeamsEvents.query().insert({
         lecture_id,
