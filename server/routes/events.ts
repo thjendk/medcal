@@ -14,13 +14,8 @@ Router.get("/", async (req, res) => {
       sortBy,
       type,
       order,
-      start,
-      end,
       id
     } = req.query;
-    // Modify query params
-    if (start) start = moment(start).format("YYYY-MM-DD HH:mm:ss");
-    if (end) end = moment(end).format("YYYY-MM-DD HH:mm:ss");
 
     // Start query
     let resultQuery = Event.query().joinEager(Event.defaultEager);
@@ -55,7 +50,7 @@ Router.get("/", async (req, res) => {
     // Hent events
     let events: Partial<Event>[] = await resultQuery;
 
-    events = events.map((event) => Event.reWriteTeams(event));
+    events = events.map(event => Event.reWriteTeams(event));
 
     res.status(200).json(events);
   } catch (error) {

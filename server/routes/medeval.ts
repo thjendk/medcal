@@ -56,7 +56,7 @@ router.get("/today/:semester/:team", async (req, res) => {
     .toISOString();
 
   try {
-    const results = await Event.query()
+    let results = await Event.query()
       .joinEager(Event.defaultEager)
       .where("events.semester", "=", semester)
       .andWhere(function() {
@@ -70,10 +70,29 @@ router.get("/today/:semester/:team", async (req, res) => {
       .andWhere("start", "<=", tomorrow)
       .orderBy("start", "asc");
 
+    results = results.map(result => Event.reWriteTeams(result));
+
     res.status(200).send(results);
   } catch (err) {
     throw new Error(err);
   }
+});
+
+router.get("/notifications", async (req, res) => {
+  const start = moment(new Date())
+    .tz("Europe/Copenhagen")
+    .subtract(15, "minutes")
+    .toISOString();
+  const end = moment(new Date())
+    .tz("Europe/Copenhagen")
+    .add(15, "minutes")
+    .toISOString();
+
+  let events = await Event.query().whereBetween("end", [start, end]);
+
+  events = events.map(event => Event.reWriteTeams(event));
+
+  res.status(200).send(events);
 });
 
 export default router;
