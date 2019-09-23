@@ -18,9 +18,14 @@ router.get("/nextevent/:semester/:team", async (req, res) => {
   try {
     let result = await Event.query()
       .joinEager(Event.defaultEager)
-      .where("teams.team", "=", team)
-      .orWhere("otherTeams.team", "=", team)
-      .andWhere("events.semester", "=", semester)
+      .where("events.semester", "=", semester)
+      .andWhere(function() {
+        this.where("teams.team", "=", team).orWhere(
+          "otherTeams.team",
+          "=",
+          team
+        );
+      })
       .andWhere(function() {
         this.whereBetween("end", [start, end]).orWhere("end", ">=", start);
       })
@@ -53,11 +58,16 @@ router.get("/today/:semester/:team", async (req, res) => {
   try {
     const results = await Event.query()
       .joinEager(Event.defaultEager)
-      .where("teams.team", "=", team)
-      .orWhere("otherTeams.team", "=", team)
       .where("events.semester", "=", semester)
-      .where("start", ">=", today)
-      .where("start", "<=", tomorrow)
+      .andWhere(function() {
+        this.where("teams.team", "=", team).orWhere(
+          "otherTeams.team",
+          "=",
+          team
+        );
+      })
+      .andWhere("start", ">=", today)
+      .andWhere("start", "<=", tomorrow)
       .orderBy("start", "asc");
 
     res.status(200).send(results);
