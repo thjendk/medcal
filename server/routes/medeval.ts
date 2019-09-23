@@ -9,11 +9,11 @@ router.get("/nextevent/:semester/:team", async (req, res) => {
   const start = moment(new Date())
     .tz("Europe/Copenhagen")
     .subtract(15, "minutes")
-    .format('YYYY-MM-DD HH:mm:ss');
+    .toISOString();
   const end = moment(new Date())
     .tz("Europe/Copenhagen")
     .add(15, "minutes")
-    .format('YYYY-MM-DD HH:mm:ss');
+    .toISOString();
 
   try {
     let result = await Event.query()
@@ -49,11 +49,11 @@ router.get("/today/:semester/:team", async (req, res) => {
   const today = moment(now)
     .tz("Europe/Copenhagen")
     .startOf("day")
-    .format('YYYY-MM-DD HH:mm:ss');
+    .toISOString();
   const tomorrow = moment(now)
     .tz("Europe/Copenhagen")
     .endOf("day")
-    .format('YYYY-MM-DD HH:mm:ss');
+    .toISOString();
 
   try {
     const results = await Event.query()
