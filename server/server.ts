@@ -7,7 +7,7 @@ import populateEventsCron, { populateEvents } from "jobs/populateEvents";
 dotEnv.config({ node_env: process.env.NODE_ENV || "development" });
 import "config/objection";
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3005;
 
 populateEventsCron.start();
 
