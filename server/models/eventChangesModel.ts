@@ -6,6 +6,7 @@ interface EventChanges {
   param: string;
   old: string;
   new: string;
+  title: string;
 }
 
 class EventChanges extends Model {

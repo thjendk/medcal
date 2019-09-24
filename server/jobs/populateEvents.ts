@@ -23,6 +23,55 @@ const semesters = {
   12: 12
 };
 
+export const compareEvents = async (
+  event: any,
+  exists?: any
+): Promise<Event> => {
+  // Sammenligning
+  const picks = ["title", "description", "location", "start", "end"]; // Hvilke værdier der sammenlignes blandt
+  const compareEvent = _.pick(event, picks);
+  const compareExists = _.pick(exists, picks);
+
+  // Hvis eventet eksisterer, men har ændret sig
+  if (exists && !_.isEqual(compareEvent, compareExists)) {
+    const changedValues: Partial<Event> = _.omitBy(
+      compareEvent,
+      (event, index) => _.isEqual(compareExists[index], event)
+    );
+    // Check om der var nogle værdier der havde ændret sig
+    if (!_.isEmpty(changedValues) && event.lecture_id) {
+      for (let change in changedValues) {
+        await EventChanges.query().insert({
+          param: change,
+          lecture_id: exists.lecture_id,
+          event_id: exists.id,
+          old: exists[change],
+          new: changedValues[change],
+          title: exists.title
+        });
+      }
+    }
+    return Event.query().updateAndFetchById(exists.id, event);
+  }
+
+  // Hvis eventet ikke eksisterer
+  if (!exists) {
+    const result = await Event.query().insertAndFetch(event);
+    if (event.lecture_id) {
+      await EventChanges.query().insert({
+        param: "created",
+        lecture_id: result.lecture_id,
+        event_id: result.id
+      });
+    }
+
+    return result;
+  }
+
+  // Hvis eventet eksisterer, og ikke har ændret sig.
+  return exists;
+};
+
 const calculateSeason = () => {
   const now = new Date().getMonth();
 
@@ -101,7 +150,8 @@ const insertEventsAndTeachers = async (events: any[]) => {
   // Insert events into database
   let count = 1;
   for (let event of events) {
-    const { lecture_id, title, semester, year, season } = event;
+    console.log(`Parsing event ${count} of ${events.length}`);
+    const { lecture_id, title, description, semester, year, season } = event;
     const team = event.team;
     delete event.team; // Vi fjerner team fra selve event objectet, da dette ikke skal indgå under events i databasen
 
@@ -111,66 +161,12 @@ const insertEventsAndTeachers = async (events: any[]) => {
     if (lecture_id) {
       existsQuery = existsQuery.where({ lecture_id });
     } else {
-      existsQuery = existsQuery.where({ title });
+      existsQuery = existsQuery.where({ title, description });
     }
 
-    let exists = await existsQuery.andWhere({ semester }).first();
+    const exists = await existsQuery.andWhere({ semester }).first();
 
-    let result: Event;
-    if (
-      exists &&
-      !_.isEqualWith(
-        event,
-        exists,
-        event =>
-          !!{
-            title: event.title,
-            description: event.description,
-            location: event.location
-          }
-      )
-    ) {
-      if (process.env.NODE_ENV !== "production") {
-        console.log(`Updating event ${count} of ${events.length}`);
-      }
-      const picks = ["title", "description", "start", "end", "location"];
-      const compareEvent = _.pick(event, picks);
-      const compareExists = _.pick(exists, picks);
-      const changedValues = _.omitBy(
-        compareEvent,
-        (event, index) => compareExists[index] === event
-      );
-      if (!_.isEmpty(changedValues)) {
-        for (const change in changedValues) {
-          await EventChanges.query().insert({
-            param: change,
-            lecture_id: exists.lecture_id,
-            event_id: exists.id,
-            old: exists[change],
-            new: changedValues[change]
-          });
-        }
-      }
-      result = await Event.query().updateAndFetchById(exists.id, event);
-    }
-    if (!exists) {
-      if (process.env.NODE_ENV !== "production") {
-        console.log(`Inserting event ${count} of ${events.length}`);
-      }
-      result = await Event.query().insertAndFetch(event);
-      await EventChanges.query().insert({
-        param: "created",
-        lecture_id: result.lecture_id,
-        event_id: result.id
-      });
-    } else {
-      if (process.env.NODE_ENV !== "production") {
-        console.log(
-          `Ignoring event ${count} of ${events.length}. Already exists.`
-        );
-      }
-      result = exists;
-    }
+    const result = await compareEvents(event, exists);
 
     if (lecture_id) {
       await TeamsEvents.query()
@@ -180,7 +176,7 @@ const insertEventsAndTeachers = async (events: any[]) => {
         lecture_id,
         team,
         season,
-        year: year,
+        year,
         semester
       });
     } else {

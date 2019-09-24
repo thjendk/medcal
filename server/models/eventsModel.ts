@@ -11,8 +11,8 @@ interface Event {
   description: string;
   location: string;
   location_id: string | null;
-  start: string;
-  end: string;
+  start: Date;
+  end: Date;
   teams: any[];
   semester: number;
   season: string;
