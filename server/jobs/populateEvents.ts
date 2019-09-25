@@ -276,14 +276,16 @@ const deleteRemovedEvents = async (events: Partial<Event>[]) => {
     .whereNotIn("title", eventTitles)
     .orWhereNotIn("description", eventDescriptions);
 
-  await EventChanges.query().insertGraph(
-    deleted.map(deletion => ({
-      event_id: deletion.id,
-      lecture_id: deletion.lecture_id,
-      param: "deleted",
-      old: deletion.title
-    }))
-  );
+  for (let deletion of deleted) {
+    if (deletion.lecture_id) {
+      await EventChanges.query().insert({
+        event_id: deletion.id,
+        lecture_id: deletion.lecture_id,
+        param: "deleted",
+        old: deletion.title
+      });
+    }
+  }
 
   await Event.query()
     .findByIds(deleted.map(deletion => deletion.id))
