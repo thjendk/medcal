@@ -308,6 +308,13 @@ export const populateEvents = async () => {
     }
   }
 
+  if (events.length < 1000) {
+    console.error('Ikke nok events til at fuldføre population');
+    return setTimeout(() => {
+      populateEvents();
+    }, 1000 * 60 * 60)
+  }
+
   await insertEventsAndTeachers(events);
   await deleteRemovedEvents(events);
 
