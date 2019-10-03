@@ -321,7 +321,7 @@ export const populateEvents = async () => {
   console.log("Finished!");
 };
 
-const populateEventsCron = new CronJob("0 0 3 * * *", () => {
+const populateEventsCron = new CronJob("0 0 6 * * *", () => {
   console.log("Running cron job...");
   populateEvents();
 });
