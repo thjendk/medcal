@@ -150,7 +150,10 @@ const insertEventsAndTeachers = async (events: any[]) => {
   // Insert events into database
   let count = 1;
   for (let event of events) {
-    console.log(`Parsing event ${count} of ${events.length}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`Parsing event ${count} of ${events.length}`);
+    }
+
     const { lecture_id, title, description, semester, year, season } = event;
     const team = event.team;
     delete event.team; // Vi fjerner team fra selve event objectet, da dette ikke skal indgå under events i databasen
@@ -309,10 +312,10 @@ export const populateEvents = async () => {
   }
 
   if (events.length < 1000) {
-    console.error('Ikke nok events til at fuldføre population');
+    console.error("Ikke nok events til at fuldføre population");
     return setTimeout(() => {
       populateEvents();
-    }, 1000 * 60 * 60)
+    }, 1000 * 60 * 60);
   }
 
   await insertEventsAndTeachers(events);
