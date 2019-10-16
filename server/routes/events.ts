@@ -14,7 +14,8 @@ Router.get("/", async (req, res) => {
       sortBy,
       type,
       order,
-      id
+      id,
+      future
     } = req.query;
 
     // Start query
@@ -45,6 +46,14 @@ Router.get("/", async (req, res) => {
       resultQuery = resultQuery.orderBy(sortBy || sortby, order || "asc");
     } else {
       resultQuery = resultQuery.orderBy("start");
+    }
+
+    if (future) {
+      resultQuery = resultQuery.where(
+        "start",
+        ">",
+        moment.tz(new Date(), "Europe/Copenhagen").toDate()
+      );
     }
 
     // Hent events
