@@ -2,7 +2,6 @@ import express from "express";
 import dotEnv from "dotenv-flow";
 import events from "routes/events";
 import teachers from "routes/teachers";
-import medeval from "routes/medeval";
 import populateEventsCron, { populateEvents } from "jobs/populateEvents";
 dotEnv.config({ node_env: process.env.NODE_ENV || "development" });
 import "config/objection";
@@ -15,7 +14,6 @@ populateEventsCron.start();
 
 app.use("/events", events);
 app.use("/teachers", teachers);
-app.use("/medeval", medeval);
 
 app.get("/populate", async (req, res) => {
   populateEvents();
