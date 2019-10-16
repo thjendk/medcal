@@ -61,7 +61,8 @@ export const compareEvents = async (
       await EventChanges.query().insert({
         param: "created",
         lecture_id: result.lecture_id,
-        event_id: result.id
+        event_id: result.id,
+        new: result.title
       });
     }
 

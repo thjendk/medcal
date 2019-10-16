@@ -6,14 +6,14 @@ const router = express.Router();
 router.get("/nextevent/:semester/:team", async (req, res) => {
   const { team, semester } = req.params;
 
-  const start = moment(new Date())
-    .tz("Europe/Copenhagen")
+  const start = moment
+    .tz(new Date(), "Europe/Copenhagen")
     .subtract(15, "minutes")
-    .toISOString();
-  const end = moment(new Date())
-    .tz("Europe/Copenhagen")
+    .toDate();
+  const end = moment
+    .tz(new Date(), "Europe/Copenhagen")
     .add(15, "minutes")
-    .toISOString();
+    .toDate();
 
   try {
     let result = await Event.query()
@@ -46,14 +46,14 @@ router.get("/today/:semester/:team", async (req, res) => {
   const { date } = req.query;
   const now = date || new Date();
 
-  const today = moment(now)
-    .tz("Europe/Copenhagen")
+  const today = moment
+    .tz(now, "Europe/Copenhagen")
     .startOf("day")
-    .toISOString();
-  const tomorrow = moment(now)
-    .tz("Europe/Copenhagen")
+    .toDate();
+  const tomorrow = moment
+    .tz(now, "Europe/Copenhagen")
     .endOf("day")
-    .toISOString();
+    .toDate();
 
   try {
     let results = await Event.query()
@@ -79,14 +79,14 @@ router.get("/today/:semester/:team", async (req, res) => {
 });
 
 router.get("/notifications", async (req, res) => {
-  const start = moment(new Date())
-    .tz("Europe/Copenhagen")
+  const start = moment
+    .tz(new Date(), "Europe/Copenhagen")
     .subtract(15, "minutes")
-    .toISOString();
-  const end = moment(new Date())
-    .tz("Europe/Copenhagen")
+    .toDate();
+  const end = moment
+    .tz(new Date(), "Europe/Copenhagen")
     .add(15, "minutes")
-    .toISOString();
+    .toDate();
 
   let events = await Event.query().whereBetween("end", [start, end]);
 

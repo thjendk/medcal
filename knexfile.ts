@@ -3,12 +3,6 @@ require("dotenv-flow").config({
 });
 
 module.exports = {
-  development: {
-    client: "mysql",
-    connection: process.env.DATABASE_URL
-  },
-  production: {
-    client: "mysql",
-    connection: process.env.DATABASE_URL
-  }
+  client: "mysql",
+  connection: process.env.DATABASE_URL
 };
