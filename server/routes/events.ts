@@ -1,6 +1,6 @@
 import express from "express";
 import Event from "models/eventsModel";
-import moment from "moment";
+import moment from "moment-timezone";
 const Router = express.Router();
 
 Router.get("/", async (req, res) => {
