@@ -287,6 +287,9 @@ const parseEvents = async (semester: number, team: number) => {
 const deleteRemovedEvents = async (events: Partial<Event>[]) => {
   try {
     console.log("Removing leftover events...");
+    if (events.length < 500) {
+      return console.log("Too few events to delete. Stopping...");
+    }
     const eventTitles = events.map(event => event.title || "");
     const eventDescriptions = events.map(event => event.description || "");
 
