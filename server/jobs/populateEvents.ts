@@ -26,51 +26,55 @@ const semesters = {
 export const compareEvents = async (
   event: any,
   exists?: any
-): Promise<Event> => {
-  // Sammenligning
-  const picks = ["title", "description", "location", "start", "end"]; // Hvilke værdier der sammenlignes blandt
-  const compareEvent = _.pick(event, picks);
-  const compareExists = _.pick(exists, picks);
+): Promise<Event | undefined> => {
+  try {
+    // Sammenligning
+    const picks = ["title", "description", "location", "start", "end"]; // Hvilke værdier der sammenlignes blandt
+    const compareEvent = _.pick(event, picks);
+    const compareExists = _.pick(exists, picks);
 
-  // Hvis eventet eksisterer, men har ændret sig
-  if (exists && !_.isEqual(compareEvent, compareExists)) {
-    const changedValues: Partial<Event> = _.omitBy(
-      compareEvent,
-      (event, index) => _.isEqual(compareExists[index], event)
-    );
-    // Check om der var nogle værdier der havde ændret sig
-    if (!_.isEmpty(changedValues) && event.lecture_id) {
-      for (let change in changedValues) {
+    // Hvis eventet eksisterer, men har ændret sig
+    if (exists && !_.isEqual(compareEvent, compareExists)) {
+      const changedValues: Partial<Event> = _.omitBy(
+        compareEvent,
+        (event, index) => _.isEqual(compareExists[index], event)
+      );
+      // Check om der var nogle værdier der havde ændret sig
+      if (!_.isEmpty(changedValues) && event.lecture_id) {
+        for (let change in changedValues) {
+          await EventChanges.query().insert({
+            param: change,
+            lecture_id: exists.lecture_id,
+            event_id: exists.id,
+            old: exists[change],
+            new: changedValues[change],
+            title: exists.title
+          });
+        }
+      }
+      return Event.query().updateAndFetchById(exists.id, event);
+    }
+
+    // Hvis eventet ikke eksisterer
+    if (!exists) {
+      const result = await Event.query().insertAndFetch(event);
+      if (event.lecture_id) {
         await EventChanges.query().insert({
-          param: change,
-          lecture_id: exists.lecture_id,
-          event_id: exists.id,
-          old: exists[change],
-          new: changedValues[change],
-          title: exists.title
+          param: "created",
+          lecture_id: result.lecture_id,
+          event_id: result.id,
+          new: result.title
         });
       }
-    }
-    return Event.query().updateAndFetchById(exists.id, event);
-  }
 
-  // Hvis eventet ikke eksisterer
-  if (!exists) {
-    const result = await Event.query().insertAndFetch(event);
-    if (event.lecture_id) {
-      await EventChanges.query().insert({
-        param: "created",
-        lecture_id: result.lecture_id,
-        event_id: result.id,
-        new: result.title
-      });
+      return result;
     }
 
-    return result;
+    // Hvis eventet eksisterer, og ikke har ændret sig.
+    return exists;
+  } catch (error) {
+    console.error(error);
   }
-
-  // Hvis eventet eksisterer, og ikke har ændret sig.
-  return exists;
 };
 
 const calculateSeason = () => {
@@ -107,101 +111,110 @@ const insertTeachers = async (
   teachers: Teacher[],
   result: Event
 ) => {
-  // Find undervisere i eventet
-  const eventTeachers: Teacher[] = [];
-  for (let teacher of teachers) {
-    if (
-      event.description &&
-      event.description.toLowerCase().includes(teacher.name.toLowerCase())
-    ) {
-      eventTeachers.push(teacher);
+  try {
+    // Find undervisere i eventet
+    const eventTeachers: Teacher[] = [];
+    for (let teacher of teachers) {
+      if (
+        event.description &&
+        event.description.toLowerCase().includes(teacher.name.toLowerCase())
+      ) {
+        eventTeachers.push(teacher);
+      }
     }
-  }
 
-  // Hent de joins der allerede eksisterer for eventet
-  const teacherJoins = await EventsTeachers.query().where({
-    event_id: result.id
-  });
+    // Hent de joins der allerede eksisterer for eventet
+    const teacherJoins = await EventsTeachers.query().where({
+      event_id: result.id
+    });
 
-  /* Tjek for om antallet af undervisere har ændret sig siden sidste opdatering.
+    /* Tjek for om antallet af undervisere har ændret sig siden sidste opdatering.
   Hvis det har, så slet alle, og sæt dem ind igen. */
-  if (
-    eventTeachers.length > 0 &&
-    teacherJoins.length !== eventTeachers.length
-  ) {
-    await EventsTeachers.query()
-      .where({ event_id: result.id })
-      .delete();
+    if (
+      eventTeachers.length > 0 &&
+      teacherJoins.length !== eventTeachers.length
+    ) {
+      await EventsTeachers.query()
+        .where({ event_id: result.id })
+        .delete();
 
-    for (let teacher of eventTeachers) {
-      const exists = await EventsTeachers.query()
-        .where({ event_id: result.id, teacher_id: teacher.id })
-        .first();
-      if (exists) continue;
+      for (let teacher of eventTeachers) {
+        const exists = await EventsTeachers.query()
+          .where({ event_id: result.id, teacher_id: teacher.id })
+          .first();
+        if (exists) continue;
 
-      await EventsTeachers.query().insert({
-        event_id: result.id,
-        teacher_id: teacher.id
-      });
+        await EventsTeachers.query().insert({
+          event_id: result.id,
+          teacher_id: teacher.id
+        });
+      }
     }
+  } catch (error) {
+    console.error(error);
   }
 };
 
 const insertEventsAndTeachers = async (events: any[]) => {
-  // Insert events into database
-  let count = 1;
-  for (let event of events) {
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`Parsing event ${count} of ${events.length}`);
-    }
+  try {
+    // Insert events into database
+    let count = 1;
+    for (let event of events) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`Parsing event ${count} of ${events.length}`);
+      }
 
-    const { lecture_id, title, description, semester, year, season } = event;
-    const team = event.team;
-    delete event.team; // Vi fjerner team fra selve event objectet, da dette ikke skal indgå under events i databasen
+      const { lecture_id, title, description, semester, year, season } = event;
+      const team = event.team;
+      delete event.team; // Vi fjerner team fra selve event objectet, da dette ikke skal indgå under events i databasen
 
-    // Indsæt eventet i events, hvis det ikke allerede eksisterer
-    let existsQuery = Event.query();
-    // Sammenlign med forelæsningsID - hvis dette ikke eksiterer så sammenlign Titel, ellers så indsæt
-    if (lecture_id) {
-      existsQuery = existsQuery.where({ lecture_id });
-    } else {
-      existsQuery = existsQuery.where({ title, description });
-    }
+      // Indsæt eventet i events, hvis det ikke allerede eksisterer
+      let existsQuery = Event.query();
+      // Sammenlign med forelæsningsID - hvis dette ikke eksiterer så sammenlign Titel, ellers så indsæt
+      if (lecture_id) {
+        existsQuery = existsQuery.where({ lecture_id });
+      } else {
+        existsQuery = existsQuery.where({ title, description });
+      }
 
-    const exists = await existsQuery.andWhere({ semester }).first();
+      const exists = await existsQuery.andWhere({ semester }).first();
 
-    const result = await compareEvents(event, exists);
+      const result = await compareEvents(event, exists);
+      if (!result) continue;
 
-    if (lecture_id) {
-      await TeamsEvents.query()
-        .where({ lecture_id: result.lecture_id, team })
-        .delete();
-      await TeamsEvents.query().insert({
-        lecture_id,
-        team,
-        season,
-        year,
-        semester
-      });
-    } else {
-      const joinExists = await OtherEventsTeams.query().findOne({
-        event_id: result.id,
-        team
-      });
-      if (!joinExists) {
-        await OtherEventsTeams.query().insert({
+      if (lecture_id) {
+        await TeamsEvents.query()
+          .where({ lecture_id: result.lecture_id, team })
+          .delete();
+        await TeamsEvents.query().insert({
+          lecture_id,
+          team,
+          season,
+          year,
+          semester
+        });
+      } else {
+        const joinExists = await OtherEventsTeams.query().findOne({
           event_id: result.id,
           team
         });
+        if (!joinExists) {
+          await OtherEventsTeams.query().insert({
+            event_id: result.id,
+            team
+          });
+        }
       }
-    }
 
-    // Fjern alle undervisere, og sæt dem ind igen (i tilfælde af at flere undervisere er tilføjet til databasen, eller at nogen har ændret sig)
-    const teachers = await Teacher.query();
-    await insertTeachers(event, teachers, result);
-    count++;
+      // Fjern alle undervisere, og sæt dem ind igen (i tilfælde af at flere undervisere er tilføjet til databasen, eller at nogen har ændret sig)
+      const teachers = await Teacher.query();
+      await insertTeachers(event, teachers, result);
+      count++;
+    }
+    return "Done!";
+  } catch (error) {
+    console.error(error);
   }
-  return "Done!";
 };
 
 const parseEvents = async (semester: number, team: number) => {
@@ -272,57 +285,65 @@ const parseEvents = async (semester: number, team: number) => {
 };
 
 const deleteRemovedEvents = async (events: Partial<Event>[]) => {
-  console.log("Removing leftover events...");
-  const eventTitles = events.map(event => event.title || "");
-  const eventDescriptions = events.map(event => event.description || "");
+  try {
+    console.log("Removing leftover events...");
+    const eventTitles = events.map(event => event.title || "");
+    const eventDescriptions = events.map(event => event.description || "");
 
-  const deleted = await Event.query()
-    .whereNotIn("title", eventTitles)
-    .orWhereNotIn("description", eventDescriptions);
+    const deleted = await Event.query()
+      .whereNotIn("title", eventTitles)
+      .orWhereNotIn("description", eventDescriptions);
 
-  for (let deletion of deleted) {
-    if (deletion.lecture_id) {
-      await EventChanges.query().insert({
-        event_id: deletion.id,
-        lecture_id: deletion.lecture_id,
-        param: "deleted",
-        old: deletion.title
-      });
+    for (let deletion of deleted) {
+      if (deletion.lecture_id) {
+        await EventChanges.query().insert({
+          event_id: deletion.id,
+          lecture_id: deletion.lecture_id,
+          param: "deleted",
+          old: deletion.title
+        });
+      }
     }
-  }
 
-  await Event.query()
-    .findByIds(deleted.map(deletion => deletion.id))
-    .delete();
+    await Event.query()
+      .findByIds(deleted.map(deletion => deletion.id))
+      .delete();
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 export const populateEvents = async () => {
-  console.log("Running population...");
-  let events: Partial<Event>[] = [];
+  try {
+    console.log("Running population...");
+    let events: Partial<Event>[] = [];
 
-  for (let key in semesters) {
-    const teams = [...Array(semesters[key])];
+    for (let key in semesters) {
+      const teams = [...Array(semesters[key])];
 
-    for (let [i] of teams.entries()) {
-      const fetchedEvents: Partial<Event>[] = await parseEvents(
-        Number(key),
-        i + 1
-      );
-      events.push(...fetchedEvents);
+      for (let [i] of teams.entries()) {
+        const fetchedEvents: Partial<Event>[] = await parseEvents(
+          Number(key),
+          i + 1
+        );
+        events.push(...fetchedEvents);
+      }
     }
+
+    if (events.length < 1000) {
+      console.error("Ikke nok events til at fuldføre population");
+      return setTimeout(() => {
+        populateEvents();
+      }, 1000 * 60 * 60);
+    }
+
+    await insertEventsAndTeachers(events);
+    await deleteRemovedEvents(events);
+
+    console.log("Finished!");
+  } catch (error) {
+    console.error(error);
   }
-
-  if (events.length < 1000) {
-    console.error("Ikke nok events til at fuldføre population");
-    return setTimeout(() => {
-      populateEvents();
-    }, 1000 * 60 * 60);
-  }
-
-  await insertEventsAndTeachers(events);
-  await deleteRemovedEvents(events);
-
-  console.log("Finished!");
 };
 
 const populateEventsCron = new CronJob("0 0 6 * * *", () => {
