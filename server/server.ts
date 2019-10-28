@@ -2,6 +2,7 @@ import express from "express";
 import dotEnv from "dotenv-flow";
 import events from "routes/events";
 import teachers from "routes/teachers";
+import cors from "cors";
 import populateEventsCron, { populateEvents } from "jobs/populateEvents";
 dotEnv.config({ node_env: process.env.NODE_ENV || "development" });
 import "config/objection";
@@ -10,6 +11,7 @@ const app = express();
 const port = process.env.PORT || 3001;
 moment.tz.setDefault("Europe/Copenhagen");
 
+app.use(cors());
 populateEventsCron.start();
 
 app.use("/events", events);
