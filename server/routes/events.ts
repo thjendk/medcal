@@ -44,7 +44,7 @@ Router.get("/", async (req, res) => {
       .skipUndefined();
 
     if (lecture) {
-      resultQuery = resultQuery.whereNotNull("lecture_id");
+      resultQuery = resultQuery.whereNotNull("events.lecture_id");
     }
 
     if (sortBy || sortby) {
