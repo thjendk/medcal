@@ -6,10 +6,8 @@ import cors from "cors";
 import populateEventsCron, { populateEvents } from "jobs/populateEvents";
 dotEnv.config({ node_env: process.env.NODE_ENV || "development" });
 import "config/objection";
-import moment from "moment-timezone";
 const app = express();
 const port = process.env.PORT || 3001;
-moment.tz.setDefault("Europe/Copenhagen");
 
 app.use(cors());
 populateEventsCron.start();
