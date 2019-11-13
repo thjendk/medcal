@@ -7,6 +7,7 @@ import Teacher from "models/teacherModel";
 import EventsTeachers from "models/eventsTeachers";
 import OtherEventsTeams from "models/otherEventsTeams";
 import EventChanges from "models/eventChangesModel";
+import moment from "moment-timezone";
 
 const semesters = {
   // 1: 9, // { Key: Semester, value: number of teams }
@@ -259,8 +260,12 @@ const parseEvents = async (semester: number, team: number) => {
               const event = data[k];
 
               events.push({
-                start: event.start,
-                end: event.end,
+                start: moment(event.start)
+                  .tz("Europe/Copenhagen", true)
+                  .toDate(),
+                end: moment(event.end)
+                  .tz("Europe/Copenhagen", true)
+                  .toDate(),
                 description: event.description,
                 location: event.location,
                 title: event.summary,
