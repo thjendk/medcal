@@ -99,7 +99,7 @@ const getLocationId = (event: Event) => {
 
 const getTypeFromEvent = (event: any) => {
   if (event.summary.match(/intro/i)) return "intro";
-  if (event.description.match(/F\d+:/i)) return "lecture";
+  if (event.title.match(/F\d+:/i)) return "lecture";
   return "unknown";
 };
 
@@ -232,13 +232,13 @@ const parseEvents = async (semester: number, team: number) => {
     6}semHold${zeroTeam}.ics`;
 
   const getEventId = (event: any) => {
-    if (event.description.match(/F\d+:/i)) {
+    if (event.title.match(/F\d+:/i)) {
       return (
         season +
         year +
         appendZero(semester.toString()) +
         appendZero(
-          event.description
+          event.title
             .trim()
             .split(":")[0]
             .substr(1)
