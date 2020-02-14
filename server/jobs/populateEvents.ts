@@ -9,19 +9,67 @@ import OtherEventsTeams from "models/otherEventsTeams";
 import EventChanges from "models/eventChangesModel";
 import moment from "moment-timezone";
 
+/**
+ * Key: semester, value: team
+ */
 const semesters = {
-  // 1: 9, // { Key: Semester, value: number of teams }
-  // 2: 8,
-  // 3: 6,
-  // 4: 6,
-  // 5: 8,
-  // 6. semester er noget underligt noget
   7: 8,
   8: 16,
   9: 8,
   10: 16,
   11: 12,
   12: 12
+};
+
+const getLocationId = (event: Event) => {
+  if (event.location.match(/aud a|auditorium a/i)) return "A";
+  if (event.location.match(/aud b|auditorium b/i)) return "B";
+  if (event.location.match(/aud c|auditorium c/i)) return "C";
+  if (event.location.match(/aud j|auditorium j/i)) return "J";
+
+  return null;
+};
+
+const calculateSeason = () => {
+  const now = new Date().getMonth();
+
+  if (now < 6) {
+    return "F";
+  } else {
+    return "E";
+  }
+};
+
+const calculateYear = () => {
+  return Number(
+    new Date()
+      .getFullYear()
+      .toString()
+      .substr(2)
+  );
+};
+
+const getEventId = (event: any, semester: number) => {
+  if (event.title.match(/F\d+:/i)) {
+    return (
+      calculateSeason() +
+      calculateYear() +
+      appendZero(semester.toString()) +
+      appendZero(event.title.split(/F(\d+):/i)[1])
+    );
+  } else {
+    return null;
+  }
+};
+
+const getTypeFromEvent = (event: any) => {
+  if (event.title.match(/intro/i)) return "intro";
+  if (event.title.match(/F\d+:/i)) return "lecture";
+  return "unknown";
+};
+
+const appendZero = (string: string) => {
+  return string.length === 1 ? `0${string}` : string;
 };
 
 export const compareEvents = async (
@@ -76,35 +124,6 @@ export const compareEvents = async (
   } catch (error) {
     console.error(error);
   }
-};
-
-const calculateSeason = () => {
-  const now = new Date().getMonth();
-
-  if (now < 6) {
-    return "F";
-  } else {
-    return "E";
-  }
-};
-
-const getLocationId = (event: Event) => {
-  if (event.location.match(/aud a|auditorium a/i)) return "A";
-  if (event.location.match(/aud b|auditorium b/i)) return "B";
-  if (event.location.match(/aud c|auditorium c/i)) return "C";
-  if (event.location.match(/aud j|auditorium j/i)) return "J";
-
-  return null;
-};
-
-const getTypeFromEvent = (event: any) => {
-  if (event.summary.match(/intro/i)) return "intro";
-  if (event.title.match(/F\d+:/i)) return "lecture";
-  return "unknown";
-};
-
-const appendZero = (string: string) => {
-  return string.length === 1 ? `0${string}` : string;
 };
 
 const insertTeachers = async (
@@ -222,32 +241,11 @@ const parseEvents = async (semester: number, team: number) => {
   if (process.env.NODE_ENV !== "production") {
     console.log(`Parsing semester ${semester} and team ${team}`);
   }
-  const year = new Date()
-    .getFullYear()
-    .toString()
-    .substr(2);
+  const year = calculateYear();
   const season = calculateSeason();
   const zeroTeam = appendZero(team.toString());
   const link = `http://skemahealthau.dk/skema/${season}${year}_0${semester -
     6}semHold${zeroTeam}.ics`;
-
-  const getEventId = (event: any) => {
-    if (event.title.match(/F\d+:/i)) {
-      return (
-        season +
-        year +
-        appendZero(semester.toString()) +
-        appendZero(
-          event.title
-            .trim()
-            .split(":")[0]
-            .substr(1)
-        )
-      );
-    } else {
-      return null;
-    }
-  };
 
   // Creates the event object from ical
   let events: any[] = [];
@@ -258,6 +256,7 @@ const parseEvents = async (semester: number, team: number) => {
           if (data.hasOwnProperty(k)) {
             if (data[k].type == "VEVENT") {
               const event = data[k];
+              event.title = event.summary;
 
               events.push({
                 start: moment(event.start)
@@ -268,11 +267,11 @@ const parseEvents = async (semester: number, team: number) => {
                   .toDate(),
                 description: event.description,
                 location: event.location,
-                title: event.summary,
+                title: event.title,
                 semester: semester,
                 type: getTypeFromEvent(event),
-                lecture_id: getEventId(event),
-                year: Number(year),
+                lecture_id: getEventId(event, semester),
+                year: year,
                 season: season,
                 team: team,
                 location_id: getLocationId(event)
@@ -298,9 +297,16 @@ const deleteRemovedEvents = async (events: Partial<Event>[]) => {
     const eventTitles = events.map(event => event.title || "");
     const eventDescriptions = events.map(event => event.description || "");
 
+    const year = calculateYear();
+    const season = calculateSeason();
     const deleted = await Event.query()
-      .whereNotIn("title", eventTitles)
-      .orWhereNotIn("description", eventDescriptions);
+      .where({ season, year })
+      .andWhere(function() {
+        this.whereNotIn("title", eventTitles).orWhereNotIn(
+          "description",
+          eventDescriptions
+        );
+      });
 
     for (let deletion of deleted) {
       if (deletion.lecture_id) {
