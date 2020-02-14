@@ -21,6 +21,9 @@ const semesters = {
   12: 12
 };
 
+/**
+ * All locations are auditoriums on Skejby University Hospital
+ */
 const getLocationId = (event: Event) => {
   if (event.location.match(/aud a|auditorium a/i)) return "A";
   if (event.location.match(/aud b|auditorium b/i)) return "B";
@@ -30,6 +33,9 @@ const getLocationId = (event: Event) => {
   return null;
 };
 
+/**
+ * Returns F for spring (forår) and E for autumn (efterår)
+ */
 const calculateSeason = () => {
   const now = new Date().getMonth();
 
