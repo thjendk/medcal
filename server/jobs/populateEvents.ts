@@ -40,6 +40,9 @@ const calculateSeason = () => {
   }
 };
 
+/**
+ * Returns the two last digits of the current year
+ */
 const calculateYear = () => {
   return Number(
     new Date()
