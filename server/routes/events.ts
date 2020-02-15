@@ -1,6 +1,7 @@
-import express from "express";
-import Event from "models/eventsModel";
-import moment from "moment-timezone";
+import express from 'express';
+import Event from 'models/eventsModel';
+import moment from 'moment-timezone';
+
 const Router = express.Router();
 
 Router.get("/", async (req, res) => {
@@ -16,7 +17,8 @@ Router.get("/", async (req, res) => {
       order,
       id,
       future,
-      lecture
+      lecture,
+      today
     } = req.query;
 
     // Start query
@@ -59,6 +61,23 @@ Router.get("/", async (req, res) => {
         ">",
         moment.tz(new Date(), "Europe/Copenhagen").toDate()
       );
+    }
+
+    if (today) {
+      resultQuery = resultQuery
+        .where(
+          "start",
+          ">",
+          moment.tz(new Date(), "Europe/Copenhagen").toDate()
+        )
+        .andWhere(
+          "end",
+          "<",
+          moment
+            .tz(new Date(), "Europe/Copenhagen")
+            .endOf("day")
+            .toDate()
+        );
     }
 
     // Hent events
