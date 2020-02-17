@@ -59,7 +59,7 @@ Router.get("/", async (req, res) => {
       resultQuery = resultQuery.where(
         "start",
         ">",
-        moment.tz(new Date(), "Europe/Copenhagen").toDate()
+        moment.tz(new Date(), "Europe/Copenhagen").toISOString()
       );
     }
 
@@ -68,7 +68,10 @@ Router.get("/", async (req, res) => {
         .where(
           "start",
           ">",
-          moment.tz(new Date(), "Europe/Copenhagen").toDate()
+          moment
+            .tz(new Date(), "Europe/Copenhagen")
+            .startOf("day")
+            .toISOString()
         )
         .andWhere(
           "end",
@@ -76,7 +79,7 @@ Router.get("/", async (req, res) => {
           moment
             .tz(new Date(), "Europe/Copenhagen")
             .endOf("day")
-            .toDate()
+            .toISOString()
         );
     }
 
@@ -84,7 +87,6 @@ Router.get("/", async (req, res) => {
     let events: Partial<Event>[] = await resultQuery;
 
     events = events.map(event => Event.reWriteTeams(event));
-
     res.status(200).json(events);
   } catch (error) {
     console.error(error);
