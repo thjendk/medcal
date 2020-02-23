@@ -1,10 +1,10 @@
 import * as Knex from "knex";
 
 export async function up(knex: Knex): Promise<any> {
-  return knex.schema.createTable("teamsEvents", t => {
+  return knex.schema.createTable("teams_events", t => {
     t.increments();
     t.integer("team").unsigned();
-    t.string("lectureId");
+    t.string("lecture_id");
     t.string("season");
     t.integer("year");
     t.integer("semester");
@@ -13,5 +13,5 @@ export async function up(knex: Knex): Promise<any> {
 }
 
 export async function down(knex: Knex): Promise<any> {
-  return knex.schema.dropTable("teamsEvents");
+  return knex.schema.dropTable("teams_events");
 }

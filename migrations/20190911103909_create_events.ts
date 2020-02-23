@@ -3,7 +3,7 @@ import * as Knex from "knex";
 export async function up(knex: Knex): Promise<any> {
   return knex.schema.createTable("events", t => {
     t.increments();
-    t.string("lectureId").unique();
+    t.string("lecture_id").unique();
     t.text("title");
     t.string("type");
     t.text("description");
