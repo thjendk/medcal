@@ -5,6 +5,7 @@ export async function up(knex: Knex): Promise<any> {
     t.increments();
     t.string("lecture_id");
     t.integer("event_id");
+    t.text("title");
     t.string("param");
     t.string("old");
     t.string("new");

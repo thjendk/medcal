@@ -195,15 +195,21 @@ const insertEventsAndTeachers = async (events: IcalEvent[]) => {
     for (let event of events) {
       let createdEvent = null as Event;
 
-      if (process.env.NODE_ENV !== "production") {
-        console.log(`Parsing event ${count} of ${events.length}`);
-      }
-
       const { lectureId } = event;
       const team = event.team; // Først kopieres team'et til dens egen variable.
       delete event.team; // Derefter fjernes team fra selve event objectet, da dette ikke skal indgå under events i databasen
-      if (!lectureId) continue; // Hvis der ikke findes et ID på eventet trackes det ikke.
+      if (!lectureId) {
+        // Hvis der ikke findes et ID på eventet trackes det ikke.
+        if (process.env.NODE_ENV !== "production") {
+          console.log(`Skipping event ${count} of ${events.length}`);
+        }
+        count++;
+        continue;
+      }
 
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`Parsing event ${count} of ${events.length}`);
+      }
       // Check om eventet eksisterer
       const exists = await Event.query()
         .where({ lectureId })
