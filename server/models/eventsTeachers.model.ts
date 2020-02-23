@@ -1,13 +1,13 @@
 import { Model } from "objection";
 
 interface EventsTeachers {
-  event_id: number;
-  teacher_id: number;
+  eventId: number;
+  teacherId: number;
 }
 
 class EventsTeachers extends Model {
-  static tableName = "events_teachers";
-  static idColumn = ["event_id", "teacher_id"];
+  static tableName = "eventsTeachers";
+  static idColumn = ["eventId", "teacherId"];
 }
 
 export default EventsTeachers;

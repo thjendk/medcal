@@ -1,7 +1,7 @@
 import { Model } from "objection";
 
 interface TeamsEvents {
-  lecture_id: string | null;
+  lectureId: string | null;
   team: number;
   season: string;
   year: number;
@@ -9,7 +9,7 @@ interface TeamsEvents {
 }
 
 class TeamsEvents extends Model {
-  static tableName = "teams_events";
+  static tableName = "teamsEvents";
 }
 
 export default TeamsEvents;

@@ -1,13 +1,13 @@
 import { Model } from "objection";
 
 interface OtherEventsTeams {
-  event_id: number;
+  eventId: number;
   team: number;
 }
 
 class OtherEventsTeams extends Model {
-  static tableName = "other_events_teams";
-  static idColumn = ["event_id", "team"];
+  static tableName = "otherEventsTeams";
+  static idColumn = ["eventId", "team"];
 }
 
 export default OtherEventsTeams;

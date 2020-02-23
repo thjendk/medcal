@@ -1,8 +1,8 @@
 import { Model } from "objection";
 
 interface EventChanges {
-  lecture_id: string | null;
-  event_id: number | null;
+  lectureId: string | null;
+  eventId: number | null;
   param: string;
   old: string;
   new: string;
@@ -10,7 +10,7 @@ interface EventChanges {
 }
 
 class EventChanges extends Model {
-  static tableName = "event_changes";
+  static tableName = "eventChanges";
 }
 
 export default EventChanges;

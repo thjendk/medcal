@@ -1,12 +1,12 @@
 import { CronJob } from "cron";
 import ical from "ical";
-import Event from "../models/eventsModel";
+import Event from "../models/events.model";
 import _ from "lodash";
-import TeamsEvents from "models/teamsEvents";
-import Teacher from "models/teacherModel";
-import EventsTeachers from "models/eventsTeachers";
-import OtherEventsTeams from "models/otherEventsTeams";
-import EventChanges from "models/eventChangesModel";
+import TeamsEvents from "models/teamsEvents.model";
+import Teacher from "models/teacher.model";
+import EventsTeachers from "models/eventsTeachers.model";
+import OtherEventsTeams from "models/otherEvents.model";
+import EventChanges from "models/eventChanges.model";
 import moment from "moment-timezone";
 
 /**
@@ -98,12 +98,12 @@ export const compareEvents = async (
         (event, index) => _.isEqual(compareExists[index], event)
       );
       // Check om der var nogle værdier der havde ændret sig
-      if (!_.isEmpty(changedValues) && event.lecture_id) {
+      if (!_.isEmpty(changedValues) && event.lectureId) {
         for (let change in changedValues) {
           await EventChanges.query().insert({
             param: change,
-            lecture_id: exists.lecture_id,
-            event_id: exists.id,
+            lectureId: exists.lectureId,
+            eventId: exists.id,
             old: exists[change],
             new: changedValues[change],
             title: exists.title
@@ -116,11 +116,11 @@ export const compareEvents = async (
     // Hvis eventet ikke eksisterer
     if (!exists) {
       const result = await Event.query().insertAndFetch(event);
-      if (event.lecture_id) {
+      if (event.lectureId) {
         await EventChanges.query().insert({
           param: "created",
-          lecture_id: result.lecture_id,
-          event_id: result.id,
+          lectureId: result.lectureId,
+          eventId: result.id,
           new: result.title
         });
       }
@@ -154,7 +154,7 @@ const insertTeachers = async (
 
     // Hent de joins der allerede eksisterer for eventet
     const teacherJoins = await EventsTeachers.query().where({
-      event_id: result.id
+      eventId: result.id
     });
 
     /* Tjek for om antallet af undervisere har ændret sig siden sidste opdatering.
@@ -164,18 +164,18 @@ const insertTeachers = async (
       teacherJoins.length !== eventTeachers.length
     ) {
       await EventsTeachers.query()
-        .where({ event_id: result.id })
+        .where({ eventId: result.id })
         .delete();
 
       for (let teacher of eventTeachers) {
         const exists = await EventsTeachers.query()
-          .where({ event_id: result.id, teacher_id: teacher.id })
+          .where({ eventId: result.id, teacherId: teacher.id })
           .first();
         if (exists) continue;
 
         await EventsTeachers.query().insert({
-          event_id: result.id,
-          teacher_id: teacher.id
+          eventId: result.id,
+          teacherId: teacher.id
         });
       }
     }
@@ -193,15 +193,15 @@ const insertEventsAndTeachers = async (events: any[]) => {
         console.log(`Parsing event ${count} of ${events.length}`);
       }
 
-      const { lecture_id, title, description, semester, year, season } = event;
+      const { lectureId, title, description, semester, year, season } = event;
       const team = event.team;
       delete event.team; // Vi fjerner team fra selve event objectet, da dette ikke skal indgå under events i databasen
 
       // Indsæt eventet i events, hvis det ikke allerede eksisterer
       let existsQuery = Event.query();
       // Sammenlign med forelæsningsID - hvis dette ikke eksiterer så sammenlign Titel, ellers så indsæt
-      if (lecture_id) {
-        existsQuery = existsQuery.where({ lecture_id });
+      if (lectureId) {
+        existsQuery = existsQuery.where({ lectureId });
       } else {
         existsQuery = existsQuery.where({ title, description });
       }
@@ -211,12 +211,12 @@ const insertEventsAndTeachers = async (events: any[]) => {
       const result = await compareEvents(event, exists);
       if (!result) continue;
 
-      if (lecture_id) {
+      if (lectureId) {
         await TeamsEvents.query()
-          .where({ lecture_id: result.lecture_id, team })
+          .where({ lectureId: result.lectureId, team })
           .delete();
         await TeamsEvents.query().insert({
-          lecture_id,
+          lectureId,
           team,
           season,
           year,
@@ -224,12 +224,12 @@ const insertEventsAndTeachers = async (events: any[]) => {
         });
       } else {
         const joinExists = await OtherEventsTeams.query().findOne({
-          event_id: result.id,
+          eventId: result.id,
           team
         });
         if (!joinExists) {
           await OtherEventsTeams.query().insert({
-            event_id: result.id,
+            eventId: result.id,
             team
           });
         }
@@ -279,7 +279,7 @@ const parseEvents = async (semester: number, team: number) => {
                 title: event.title,
                 semester: semester,
                 type: getTypeFromEvent(event),
-                lecture_id: getEventId(event, semester),
+                lectureId: getEventId(event, semester),
                 year: year,
                 season: season,
                 team: team,
@@ -318,10 +318,10 @@ const deleteRemovedEvents = async (events: Partial<Event>[]) => {
       });
 
     for (let deletion of deleted) {
-      if (deletion.lecture_id) {
+      if (deletion.lectureId) {
         await EventChanges.query().insert({
-          event_id: deletion.id,
-          lecture_id: deletion.lecture_id,
+          eventId: deletion.id,
+          lectureId: deletion.lectureId,
           param: "deleted",
           old: deletion.title
         });

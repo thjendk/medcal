@@ -1,4 +1,4 @@
-import Teacher from "models/teacherModel";
+import Teacher from "models/teacher.model";
 import axios from "axios";
 import xlsx from "xlsx";
 import _ from "lodash";

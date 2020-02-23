@@ -1,23 +1,23 @@
 import * as Knex from "knex";
 
 export async function up(knex: Knex): Promise<any> {
-  return knex.schema.createTable("events_teachers", t => {
-    t.integer("event_id")
+  return knex.schema.createTable("eventsTeachers", t => {
+    t.integer("eventId")
       .unsigned()
       .notNullable()
       .references("events.id")
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
-    t.integer("teacher_id")
+    t.integer("teacherId")
       .unsigned()
       .notNullable()
       .references("teachers.id")
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
-    t.primary(["event_id", "teacher_id"]);
+    t.primary(["eventId", "teacherId"]);
   });
 }
 
 export async function down(knex: Knex): Promise<any> {
-  return knex.schema.dropTable("events_teachers");
+  return knex.schema.dropTable("eventsTeachers");
 }

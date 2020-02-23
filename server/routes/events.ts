@@ -1,6 +1,6 @@
-import express from 'express';
-import Event from 'models/eventsModel';
-import moment from 'moment-timezone';
+import express from "express";
+import Event from "models/events.model";
+import moment from "moment-timezone";
 
 const Router = express.Router();
 
@@ -46,7 +46,7 @@ Router.get("/", async (req, res) => {
       .skipUndefined();
 
     if (lecture) {
-      resultQuery = resultQuery.whereNotNull("events.lecture_id");
+      resultQuery = resultQuery.whereNotNull("events.lectureId");
     }
 
     if (sortBy || sortby) {

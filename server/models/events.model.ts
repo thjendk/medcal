@@ -1,16 +1,16 @@
 import { Model } from "objection";
-import TeamsEvents from "models/teamsEvents";
-import Teacher from "models/teacherModel";
-import OtherEventsTeams from "models/otherEventsTeams";
+import TeamsEvents from "models/teamsEvents.model";
+import Teacher from "models/teacher.model";
+import OtherEventsTeams from "models/otherEvents.model";
 
 interface Event {
   id: number;
-  lecture_id: string | null;
+  lectureId: string | null;
   title: string;
   type: string;
   description: string;
   location: string;
-  location_id: string | null;
+  locationId: string | null;
   start: Date;
   end: Date;
   teams: any[];
@@ -18,14 +18,14 @@ interface Event {
   season: string;
   year: number;
   otherTeams: any[];
-  updated_at: Date;
+  updatedAt: Date;
 }
 
 class Event extends Model {
   static tableName = "events";
 
   $beforeUpdate() {
-    this.updated_at = new Date();
+    this.updatedAt = new Date();
   }
 
   static defaultEager = "[teams, teachers, otherTeams]";
@@ -35,8 +35,8 @@ class Event extends Model {
       relation: Model.HasManyRelation,
       modelClass: TeamsEvents,
       join: {
-        from: "events.lecture_id",
-        to: "teams_events.lecture_id"
+        from: "events.lectureId",
+        to: "teamsEvents.lectureId"
       }
     },
     otherTeams: {
@@ -44,7 +44,7 @@ class Event extends Model {
       modelClass: OtherEventsTeams,
       join: {
         from: "events.id",
-        to: "other_events_teams.event_id"
+        to: "otherEventsTeams.eventId"
       }
     },
     teachers: {
@@ -53,8 +53,8 @@ class Event extends Model {
       join: {
         from: "events.id",
         through: {
-          from: "events_teachers.event_id",
-          to: "events_teachers.teacher_id"
+          from: "eventsTeachers.eventId",
+          to: "eventsTeachers.teacherId"
         },
         to: "teachers.id"
       }

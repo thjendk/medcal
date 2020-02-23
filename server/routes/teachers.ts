@@ -1,5 +1,5 @@
 import express from "express";
-import Teacher from "models/teacherModel";
+import Teacher from "models/teacher.model";
 const router = express.Router();
 
 router.get("/", async (req, res) => {
