@@ -1,7 +1,6 @@
 import { Model } from "objection";
 import TeamsEvents from "models/teamsEvents.model";
 import Teacher from "models/teacher.model";
-import OtherEventsTeams from "models/otherEvents.model";
 
 interface Event {
   id: number;
@@ -39,14 +38,6 @@ class Event extends Model {
         to: "teamsEvents.lectureId"
       }
     },
-    otherTeams: {
-      relation: Model.HasManyRelation,
-      modelClass: OtherEventsTeams,
-      join: {
-        from: "events.id",
-        to: "otherEventsTeams.eventId"
-      }
-    },
     teachers: {
       relation: Model.ManyToManyRelation,
       modelClass: Teacher,
@@ -58,21 +49,6 @@ class Event extends Model {
         },
         to: "teachers.id"
       }
-    }
-  };
-
-  /**
-   * Hvis der ikke er nogen teams i eventet, så replace med otherTeams (og derefter fjern otherTeams). Ellers fjernes bare otherTeams.
-   */
-  static reWriteTeams: any = (object: Event) => {
-    if (!object.teams || object.teams.length < 1) {
-      return {
-        ...object,
-        teams: object.otherTeams,
-        otherTeams: undefined
-      };
-    } else {
-      return { ...object, otherTeams: undefined };
     }
   };
 }
