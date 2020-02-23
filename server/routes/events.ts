@@ -17,7 +17,6 @@ Router.get("/", async (req, res) => {
       order,
       id,
       future,
-      lecture,
       today
     } = req.query;
 
@@ -44,10 +43,6 @@ Router.get("/", async (req, res) => {
           .skipUndefined();
       })
       .skipUndefined();
-
-    if (lecture) {
-      resultQuery = resultQuery.whereNotNull("events.lectureId");
-    }
 
     if (sortBy || sortby) {
       resultQuery = resultQuery.orderBy(sortBy || sortby, order || "asc");
