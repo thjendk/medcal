@@ -16,7 +16,6 @@ interface Event {
   semester: number;
   season: string;
   year: number;
-  otherTeams: any[];
   updatedAt: Date;
 }
 
@@ -27,7 +26,7 @@ class Event extends Model {
     this.updatedAt = new Date();
   }
 
-  static defaultEager = "[teams, teachers, otherTeams]";
+  static defaultEager = "[teams, teachers]";
 
   static relationMappings = {
     teams: {

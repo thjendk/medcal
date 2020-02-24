@@ -38,9 +38,7 @@ Router.get("/", async (req, res) => {
         type: type
       })
       .where(function() {
-        this.where({ "teams.team": team })
-          .orWhere({ "otherTeams.team": team })
-          .skipUndefined();
+        this.where({ "teams.team": team }).skipUndefined();
       })
       .skipUndefined();
 
