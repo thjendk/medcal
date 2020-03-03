@@ -96,7 +96,7 @@ const appendZero = (string: string) => {
 const logChanges = async (
   changes: string[],
   newEvent: Partial<Event>,
-  oldEvent: Event
+  oldEvent: Partial<Event>
 ) => {
   if (newEvent.lectureId) {
     for (let change of changes) {
@@ -137,7 +137,7 @@ const handleEventChanges = async (
   // Hvis eventet eksisterer, og har ændret sig
   if (!_.isEqual(newEventComparison, oldEventComparison)) {
     const changes = findChangedValues(newEvent, oldEvent);
-    await logChanges(changes, newEvent, oldEvent);
+    await logChanges(changes, newEventComparison, oldEventComparison);
     return Event.query().updateAndFetchById(oldEvent.id, newEvent);
   }
 };
