@@ -4,6 +4,7 @@ export async function up(knex: Knex): Promise<any> {
   return knex.schema.createTable("events", t => {
     t.increments();
     t.string("lecture_id").unique();
+    t.string("place");
     t.text("title");
     t.string("type");
     t.text("description");

@@ -5,6 +5,7 @@ import Teacher from "models/teacher.model";
 interface Event {
   id: number;
   lectureId: string | null;
+  place: string;
   title: string;
   type: string;
   description: string;
@@ -16,6 +17,7 @@ interface Event {
   semester: number;
   season: string;
   year: number;
+  createdAt: Date;
   updatedAt: Date;
 }
 
@@ -24,6 +26,10 @@ class Event extends Model {
 
   $beforeUpdate() {
     this.updatedAt = new Date();
+  }
+
+  $beforeInsert() {
+    this.createdAt = new Date();
   }
 
   static defaultEager = "[teams, teachers]";

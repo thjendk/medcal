@@ -16,8 +16,9 @@ Router.get("/", async (req, res) => {
       type,
       order,
       id,
-      future,
-      today
+      locationId,
+      place,
+      date
     } = req.query;
 
     // Start query
@@ -35,7 +36,9 @@ Router.get("/", async (req, res) => {
         "events.year": year,
         "events.season": season,
         "events.semester": semester,
-        type: type
+        type,
+        locationId,
+        place
       })
       .where(function() {
         this.where({ "teams.team": team }).skipUndefined();
@@ -48,32 +51,21 @@ Router.get("/", async (req, res) => {
       resultQuery = resultQuery.orderBy("start");
     }
 
-    if (future) {
-      resultQuery = resultQuery.where(
-        "start",
-        ">",
-        moment.tz(new Date(), "Europe/Copenhagen").toISOString()
-      );
-    }
-
-    if (today) {
+    if (date) {
+      const dateParts = date.split("-");
+      const year = Number(dateParts[0]);
+      const month = Number(dateParts[1]) - 1;
+      const day = Number(dateParts[2]);
+      const time = moment(new Date()).set({
+        date: day,
+        month,
+        year
+      });
+      const start = time.startOf("day").toISOString();
+      const end = time.endOf("day").toISOString();
       resultQuery = resultQuery
-        .where(
-          "start",
-          ">",
-          moment
-            .tz(new Date(), "Europe/Copenhagen")
-            .startOf("day")
-            .toISOString()
-        )
-        .andWhere(
-          "end",
-          "<",
-          moment
-            .tz(new Date(), "Europe/Copenhagen")
-            .endOf("day")
-            .toISOString()
-        );
+        .where("start", ">", start)
+        .where("start", "<", end);
     }
 
     // Hent events

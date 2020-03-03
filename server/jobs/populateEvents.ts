@@ -25,10 +25,22 @@ const semesters = {
  * All locations are auditoriums on Skejby University Hospital
  */
 const getLocationId = (event: Partial<Event>) => {
-  if (event.location.match(/aud a|auditorium a/i)) return "A";
-  if (event.location.match(/aud b|auditorium b/i)) return "B";
-  if (event.location.match(/aud c|auditorium c/i)) return "C";
-  if (event.location.match(/aud j|auditorium j/i)) return "J";
+  if (event.location.match(/\w\d{3}\s*-\s*\d{3}/i)) {
+    const locationId = event.location.split(/(\w\d{3}\s*-\s*\d{3})/i)[1];
+    return locationId;
+  }
+
+  return null;
+};
+
+const getPlace = (event: Partial<Event>) => {
+  if (event.location.match(/\d{4}\s*-\s*\d{3}/)) {
+    return "AU";
+  }
+
+  if (event.location.match(/\D\d{3}\s*-\s*\d{3}/)) {
+    return "AUH";
+  }
 
   return null;
 };
@@ -280,6 +292,7 @@ const parseEvents = async (semester: number, team: number) => {
                 year: year,
                 season: season,
                 team: team,
+                place: getPlace(event),
                 locationId: getLocationId(event)
               });
             }
