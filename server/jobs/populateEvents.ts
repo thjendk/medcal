@@ -93,51 +93,17 @@ const appendZero = (string: string) => {
   return string.length === 1 ? `0${string}` : string;
 };
 
-const logChanges = async (
-  changes: string[],
-  newEvent: Partial<Event>,
-  oldEvent: Partial<Event>
-) => {
-  if (newEvent.lectureId) {
-    for (let change of changes) {
-      await EventChanges.query().insert({
-        param: change,
-        lectureId: oldEvent.lectureId,
-        eventId: oldEvent.id,
-        old: oldEvent[change],
-        new: changes[change],
-        title: oldEvent.title
-      });
-    }
-  }
-};
-
-const findChangedValues = (
-  newEvent: Partial<Event>,
-  oldEvent: Event
-): string[] => {
-  const changes = [] as string[];
-
-  for (let key in oldEvent) {
-    if (oldEvent[key] !== newEvent[key]) changes.push(key);
-  }
-
-  return changes;
-};
-
 const handleEventChanges = async (
   newEvent: Partial<Event>,
   oldEvent: Event
 ) => {
   // Sammenligning
-  const picks = ["title", "description", "location", "start", "end"]; // Hvilke værdier der sammenlignes blandt
+  const picks = ["title", "description", "location_id", "start", "end"]; // Hvilke værdier der sammenlignes blandt
   const newEventComparison = _.pick(newEvent, picks);
   const oldEventComparison = _.pick(oldEvent, picks);
 
   // Hvis eventet eksisterer, og har ændret sig
   if (!_.isEqual(newEventComparison, oldEventComparison)) {
-    const changes = findChangedValues(newEvent, oldEvent);
-    await logChanges(changes, newEventComparison, oldEventComparison);
     return Event.query().updateAndFetchById(oldEvent.id, newEvent);
   }
 };
