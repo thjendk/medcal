@@ -18,7 +18,8 @@ Router.get("/", async (req, res) => {
       id,
       locationId,
       place,
-      date
+      date,
+      today
     } = req.query;
 
     // Start query
@@ -49,6 +50,15 @@ Router.get("/", async (req, res) => {
       resultQuery = resultQuery.orderBy(sortBy || sortby, order || "asc");
     } else {
       resultQuery = resultQuery.orderBy("start");
+    }
+
+    if (today) {
+      const time = moment(new Date());
+      const start = time.startOf("day").toISOString();
+      const end = time.endOf("day").toISOString();
+      resultQuery = resultQuery
+        .where("start", ">", start)
+        .where("start", "<", end);
     }
 
     if (date) {
