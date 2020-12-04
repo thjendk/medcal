@@ -98,7 +98,7 @@ const handleEventChanges = async (
   oldEvent: Event
 ) => {
   // Sammenligning
-  const picks = ["title", "description", "location_id", "start", "end"]; // Hvilke værdier der sammenlignes blandt
+  const picks = ["title", "description", "location", "location_id", "start", "end"]; // Hvilke værdier der sammenlignes blandt
   const newEventComparison = _.pick(newEvent, picks);
   const oldEventComparison = _.pick(oldEvent, picks);
 
